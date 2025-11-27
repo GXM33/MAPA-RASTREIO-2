@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8">
+  <title>Trajeto ao Vivo - Policial</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { height: 60vh; width: 100%; }
+    #controls { margin-top: 10px; }
+    .btn { margin: 2px; }
+    #historico, #favoritos { margin-top: 10px; }
+    .trajeto { border: 1px solid #ddd; padding: 6px; margin: 4px; }
+  </style>
+</head>
+<body>
+<h2>Rastreamento Policial ao Vivo</h2>
+<div id="map"></div>
+<div id="controls">
+  <input type="text" id="busca" placeholder="Digite rua e número" autocomplete="off">
+  <div id="suggestions"></div>
+  <button class="btn" id="btnBuscar">Buscar</button>
+  <button class="btn" id="btnLimparBusca">Limpar Busca</button>
+  <button class="btn" id="btnAtual">Ir para Localização Atual</button>
+  <button class="btn" id="btnAddManual">Marcar ponto manual</button>
+  <button class="btn" id="btnIniciar">Iniciar</button>
+  <button class="btn" id="btnParar">Parar</button>
+  <span id="status"></span>
+  <button class="btn" id="btnExportarImg">Exportar Imagem</button>
+  <button class="btn" id="btnExportarCSV">Exportar Coordenadas</button>
+</div>
+<div id="favoritos"><h3>Favoritos:</h3></div>
+<div id="historico"><h3>Histórico:</h3></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-image@0.4.0/leaflet-image.js"></script>
+<script>
+let map = L.map('map').setView([-30.0346, -51.2177], 17);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {}).addTo(map);
+let marcadorAtual, marcadorBusca, marcadorManual, polyline, pathLatLngs = [];
+let isTracking = false, watchId = null, historico = [], favoritos = [];
+let statusSpan = document.getElementById('status');
+
+// Localização atual ao abrir
+function atualizarLocalizacaoInicial() {
+  navigator.geolocation.getCurrentPosition(pos => {
+    let latlng = [pos.coords.latitude, pos.coords.longitude];
+    map.setView(latlng, 18);
+    if (!marcadorAtual) {
+      marcadorAtual = L.marker(latlng, {title:"Você"}).addTo(map);
+    } else {
+      marcadorAtual.setLatLng(latlng);
+    }
+    statusSpan.innerText = "Localização pronta";
+  }, () => { statusSpan.innerText = "Falha ao obter localização"; }, {
+    enableHighAccuracy: true, maximumAge: 0
+  });
+}
+atualizarLocalizacaoInicial();
+
+// Atualizar localização em tempo real
+function iniciarRastreamento() {
+  if (isTracking) return;
+  isTracking = true;
+  statusSpan.innerText = "Rastreamento: Ativo";
+  pathLatLngs = [];
+  if (polyline) { map.removeLayer(polyline); }
+  watchId = navigator.geolocation.watchPosition(async pos => {
+    let latlng = [pos.coords.latitude, pos.coords.longitude];
+    if (!marcadorAtual) {
+      marcadorAtual = L.marker(latlng, {title:"Você"}).addTo(map);
+    } else {
+      marcadorAtual.setLatLng(latlng);
+    }
+    pathLatLngs.push(latlng);
+    // Map-matching via OSRM
+    if (pathLatLngs.length >= 2) {
+      let seg = [pathLatLngs[pathLatLngs.length-2], latlng];
+      let url = `https://router.project-osrm.org/route/v1/driving/${seg[0][1]},${seg[0][0]};${seg[1][1]},${seg[1][0]}?overview=full`;
+      let resp = await fetch(url);
+      let data = await resp.json();
+      if (data.routes && data.routes.length > 0) {
+        let coords = data.routes[0].geometry;
+        let points = decodePolyline(coords);
+        if (!polyline) {
+          polyline = L.polyline(points, {color:'blue'}).addTo(map);
+        } else {
+          polyline.setLatLngs([...polyline.getLatLngs(), ...points]);
+        }
+      }
+    }
+  }, err => { statusSpan.innerText = "Erro no rastreamento"; }, {
+    enableHighAccuracy: true, maximumAge:0, timeout:5000
+  });
+}
+
+// Decode polyline (OSRM)
+function decodePolyline(str) {
+  let points = [];
+  let index = 0, lat = 0, lng = 0;
+  while (index < str.length) {
+    let b, shift = 0, result = 0;
+    do { b = str.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    let dlat = ((result & 1) ? ~(result >> 1) : result >> 1);
+    lat += dlat;
+    shift = 0; result = 0;
+    do { b = str.charCodeAt(index++) - 63; result |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+    let dlng = ((result & 1) ? ~(result >> 1) : result >> 1);
+    lng += dlng;
+    points.push([lat / 1E5, lng / 1E5]);
+  }
+  return points;
+}
+
+// Parar rastreamento e salvar histórico
+function pararRastreamento() {
+  if (!isTracking) return;
+  isTracking = false;
+  navigator.geolocation.clearWatch(watchId);
+  statusSpan.innerText = "Rastreamento: Parado";
+  historico.push([...polyline.getLatLngs()]);
+  salvarHistorico();
+  desenharHistorico();
+}
+
+function salvarHistorico() {
+  localStorage.setItem('historicoTrajetos', JSON.stringify(historico));
+}
+function carregarHistorico() {
+  historico = JSON.parse(localStorage.getItem('historicoTrajetos') || '[]');
+}
+function desenharHistorico() {
+  let histDiv = document.getElementById('historico');
+  histDiv.innerHTML = "<h3>Histórico:</h3>";
+  historico.forEach((traj, i) => {
+    let el = document.createElement('div');
+    el.className = "trajeto";
+    el.innerHTML = `Trajeto #${i+1} <button onclick="verTrajeto(${i})">Ver</button> <button onclick="deletarTrajeto(${i})">Excluir</button>`;
+    histDiv.appendChild(el);
+  });
+}
+window.verTrajeto = function(i) {
+  if (polyline) map.removeLayer(polyline);
+  polyline = L.polyline(historico[i], {color:'green'}).addTo(map);
+}
+window.deletarTrajeto = function(i) {
+  historico.splice(i,1);
+  salvarHistorico();
+  desenharHistorico();
+}
+
+// Favoritos
+function salvarFavoritos() { localStorage.setItem('favoritosMap', JSON.stringify(favoritos)); }
+function carregarFavoritos() { favoritos = JSON.parse(localStorage.getItem('favoritosMap')||'[]'); }
+function desenharFavoritos() {
+  let favDiv = document.getElementById('favoritos');
+  favDiv.innerHTML = "<h3>Favoritos:</h3>";
+  favoritos.forEach((fav, i) => {
+    let el = document.createElement('div');
+    el.className = "trajeto";
+    el.innerHTML = `${fav.nome} <button onclick="navegarFavorito(${i})">Ir</button> <button onclick="removerFavorito(${i})">Excluir</button>`;
+    favDiv.appendChild(el);
+    L.marker([fav.lat,fav.lng],{title:"Favorito",icon:L.icon({iconUrl:"https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png"})}).addTo(map);
+  });
+}
+window.navegarFavorito = function(i){
+  let fav = favoritos[i];
+  map.setView([fav.lat,fav.lng],18);
+  // Traça rota do ponto atual até o favorito
+  let url = `https://router.project-osrm.org/route/v1/driving/${marcadorAtual.getLatLng().lng},${marcadorAtual.getLatLng().lat};${fav.lng},${fav.lat}?overview=full`;
+  fetch(url).then(r=>r.json()).then(d=>{
+    if (polyline) map.removeLayer(polyline);
+    let pts = decodePolyline(d.routes[0].geometry);
+    polyline = L.polyline(pts,{color:'red'}).addTo(map);
+  });
+}
+window.removerFavorito = function(i){
+  favoritos.splice(i,1); salvarFavoritos(); desenharFavoritos();
+}
+
+// Buscar endereço e número + autocomplete
+document.getElementById('busca').addEventListener('input',function(e){
+  let query = e.target.value;
+  if (query.length<3) return;
+  fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(query)}`)
+    .then(r=>r.json()).then(res=>{
+      let sugDiv = document.getElementById('suggestions');
+      sugDiv.innerHTML = '';
+      res.slice(0,5).forEach(s=>{
+        let el = document.createElement('div');
+        el.innerText = s.display_name;
+        el.onclick = ()=>{e.target.value=s.display_name; sugDiv.innerHTML = ''; };
+        sugDiv.appendChild(el);
+      });
+    });
+});
+document.getElementById('btnBuscar').onclick = function(){
+  let query = document.getElementById('busca').value;
+  fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${encodeURIComponent(query)}`)
+    .then(r=>r.json()).then(res=>{
+      if(res.length>0){
+        let s = res[0];
+        let latlng = [parseFloat(s.lat), parseFloat(s.lon)];
+        if(marcadorBusca) map.removeLayer(marcadorBusca);
+        marcadorBusca = L.marker(latlng,{title:"Busca"}).addTo(map);
+        map.setView(latlng,18);
+      } else {
+        statusSpan.innerText = "Endereço não encontrado";
+      }
+    });
+};
+document.getElementById('btnLimparBusca').onclick = function(){
+  document.getElementById('busca').value='';
+  document.getElementById('suggestions').innerHTML = '';
+  if(marcadorBusca) map.removeLayer(marcadorBusca);
+};
+document.getElementById('btnAtual').onclick = atualizarLocalizacaoInicial;
+
+document.getElementById('btnIniciar').onclick = function(){
+  if(confirm("Ativar rastreamento ao vivo e compartilhar localização?")) iniciarRastreamento();
+};
+document.getElementById('btnParar').onclick = pararRastreamento;
+
+document.getElementById('btnAddManual').onclick = function(){
+  map.once('click',function(e){
+    let latlng = [e.latlng.lat,e.latlng.lng];
+    marcadorManual = L.marker(latlng,{title:"Manual"}).addTo(map);
+    favoritos.push({nome:'Manual '+latlng.join(','),lat:latlng[0],lng:latlng[1]});
+    salvarFavoritos(); desenharFavoritos();
+  });
+};
+
+document.getElementById('btnExportarImg').onclick = function(){
+  leafletImage(map,function(img){
+    let link = document.createElement('a');
+    link.href = img.toDataURL(); link.download = "trajeto.png";
+    link.click();
+  });
+};
+document.getElementById('btnExportarCSV').onclick = function(){
+  let allCoords = polyline?polyline.getLatLngs():[];
+  let csv = 'lat,lng\n'+allCoords.map(p=>`${p.lat},${p.lng}`).join('\n');
+  let blob = new Blob([csv],{type:'text/csv'});
+  let a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = "trajeto.csv";
+  a.click();
+};
+
+// Persistência
+carregarHistorico(); desenharHistorico();
+carregarFavoritos(); desenharFavoritos();
+</script>
+</body>
+</html>
