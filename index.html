@@ -3,501 +3,341 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rastreador de Rota (sem chave na URL)</title>
+    <title>Rastreador de rota em tempo real</title>
     <style>
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
         }
 
-        body {
+        body, html {
+            height: 100%;
             font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
         }
 
         .container {
             display: flex;
-            height: 100vh;
+            height: 100%;
         }
 
         .sidebar {
-            width: 350px;
-            background-color: white;
-            padding: 20px;
-            overflow-y: auto;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+            width: 280px;
+            padding: 16px;
+            background-color: #ffffff;
+            border-right: 1px solid #ddd;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
         }
 
-        .sidebar h2 {
-            margin-bottom: 20px;
-            color: #333;
-            font-size: 20px;
+        .sidebar h1 {
+            font-size: 18px;
+            margin-bottom: 4px;
         }
 
-        .form-group {
-            margin-bottom: 15px;
+        .sidebar small {
+            color: #666;
+            font-size: 12px;
         }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            color: #555;
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .search-container {
-            position: relative;
-            margin-bottom: 10px;
-        }
-
-        .search-container input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
+        .status-box {
+            padding: 8px 10px;
             border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .search-container button {
-            position: absolute;
-            right: 5px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            padding: 5px;
-        }
-
-        .suggestions {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            right: 0;
-            background: white;
-            border: 1px solid #ddd;
-            border-top: none;
-            max-height: 150px;
-            overflow-y: auto;
-            z-index: 1000;
-            display: none;
-        }
-
-        .suggestions.active {
-            display: block;
-        }
-
-        .suggestion-item {
-            padding: 10px;
-            cursor: pointer;
-            border-bottom: 1px solid #eee;
             font-size: 13px;
         }
 
-        .suggestion-item:hover {
-            background-color: #f0f0f0;
+        .status-tracking {
+            background-color: #e3f2fd;
+            color: #0d47a1;
+            border: 1px solid #90caf9;
         }
 
-        .button-group {
+        .status-info {
+            background-color: #f5f5f5;
+            color: #424242;
+            border: 1px solid #e0e0e0;
+        }
+
+        .datetime {
+            font-size: 12px;
+            color: #555;
+        }
+
+        .buttons {
             display: flex;
-            gap: 10px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 8px;
         }
 
         button {
-            flex: 1;
-            padding: 10px 15px;
-            border: none;
+            padding: 10px 12px;
             border-radius: 4px;
+            border: none;
             cursor: pointer;
             font-size: 14px;
             font-weight: bold;
-            transition: background-color 0.3s;
-            min-width: 100px;
+            transition: background-color 0.2s;
         }
 
-        #btnCurrentLocation {
-            background-color: #4CAF50;
-            color: white;
+        #btnStart {
+            background-color: #4caf50;
+            color: #fff;
+        }
+        #btnStart:hover {
+            background-color: #43a047;
         }
 
-        #btnCurrentLocation:hover {
-            background-color: #45a049;
-        }
-
-        #btnClearSearch {
+        #btnStop {
             background-color: #f44336;
-            color: white;
+            color: #fff;
+        }
+        #btnStop:hover {
+            background-color: #e53935;
         }
 
-        #btnClearSearch:hover {
-            background-color: #da190b;
-        }
-
-        #btnNavigate {
-            background-color: #2196F3;
-            color: white;
-            flex: 1;
-        }
-
-        #btnNavigate:hover {
-            background-color: #0b7dda;
-        }
-
-        #btnClearRoute {
+        #btnClear {
             background-color: #ff9800;
-            color: white;
+            color: #fff;
         }
-
-        #btnClearRoute:hover {
-            background-color: #e68900;
-        }
-
-        .status {
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            font-size: 13px;
-            display: none;
-        }
-
-        .status.active {
-            display: block;
-        }
-
-        .status.tracking {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .status.info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
+        #btnClear:hover {
+            background-color: #fb8c00;
         }
 
         #map {
             flex: 1;
-            background-color: #e0e0e0;
-        }
-
-        .current-date {
-            background-color: #e3f2fd;
-            color: #1565c0;
-            padding: 10px;
-            border-radius: 4px;
-            margin-bottom: 15px;
-            font-size: 13px;
-            border: 1px solid #bbdefb;
-        }
-
-        .destination-select {
-            margin-bottom: 15px;
-        }
-
-        .destination-select select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-            cursor: pointer;
+            height: 100%;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="sidebar">
-            <h2>🗺️ Rastreador</h2>
-
-            <div class="current-date">
-                <strong>Data:</strong> <span id="currentDate"></span>
-            </div>
-
-            <div class="status tracking" id="statusTracking">
-                <strong>🔴 Rastreamento:</strong> Iniciado
-            </div>
-
-            <div class="form-group">
-                <label for="startAddress">📍 Endereço de Partida</label>
-                <div class="search-container">
-                    <input 
-                        type="text" 
-                        id="startAddress" 
-                        placeholder="Digite endereço"
-                    >
-                    <button id="btnCurrentLocation" title="Usar localização atual">📍</button>
-                    <div class="suggestions" id="startSuggestions"></div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="startNumber">Nº</label>
-                <input 
-                    type="text" 
-                    id="startNumber" 
-                    placeholder="Número"
-                    maxlength="10"
-                >
-            </div>
-
-            <div class="form-group">
-                <label for="destinationAddress">🎯 Endereço de Destino</label>
-                <div class="search-container">
-                    <input 
-                        type="text" 
-                        id="destinationAddress" 
-                        placeholder="Digite endereço"
-                    >
-                    <button id="btnClearSearch" title="Limpar busca">✕</button>
-                    <div class="suggestions" id="destinationSuggestions"></div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label for="destinationNumber">Nº</label>
-                <input 
-                    type="text" 
-                    id="destinationNumber" 
-                    placeholder="Número"
-                    maxlength="10"
-                >
-            </div>
-
-            <div class="destination-select" id="destinationSelectContainer" style="display: none;">
-                <label for="destinationSelect">Selecione um destino:</label>
-                <select id="destinationSelect">
-                    <option value="">-- Escolha --</option>
-                </select>
-            </div>
-
-            <div class="button-group">
-                <button id="btnNavigate">Navegar</button>
-            </div>
-
-            <div class="button-group">
-                <button id="btnClearRoute">Limpar Rota</button>
-            </div>
-
-            <div class="status info" id="statusInfo"></div>
+<div class="container">
+    <div class="sidebar">
+        <div>
+            <h1>🗺️ Rastreador</h1>
+            <small>Enquanto o rastreamento estiver ativo, o mapa vai traçando a rota do seu deslocamento.</small>
         </div>
 
-        <div id="map"></div>
+        <div class="status-box status-tracking" id="trackingStatus">
+            Rastreamento: <strong>Parado</strong>
+        </div>
+
+        <div class="status-box status-info" id="infoStatus">
+            Aguardando ações...
+        </div>
+
+        <div class="datetime">
+            Data/hora (Brasília): <span id="currentDateTime"></span>
+        </div>
+
+        <div class="buttons">
+            <button id="btnStart">Iniciar rastreamento</button>
+            <button id="btnStop">Parar rastreamento</button>
+            <button id="btnClear">Limpar rota</button>
+        </div>
     </div>
 
-    <!--
-      IMPORTANTE:
-      Seu sistema está "sem chave API".
-      Se em algum outro arquivo você já carrega o Google Maps (por exemplo, via bundler),
-      não precisa desta tag.
-      Se for testar este HTML isolado, precisará incluir a biblioteca de alguma forma.
-    -->
-    <!-- Exemplo COM chave (não será usado no seu caso):
-    <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_AQUI&libraries=places"></script>
-    -->
+    <div id="map"></div>
+</div>
 
-    <!-- Exemplo SEM chave explícita na URL (vai dar erro nas contas Google novas, mas mantém seu HTML sem key): -->
-    <script src="https://maps.googleapis.com/maps/api/js?libraries=places"></script>
+<!-- Google Maps SEM chave na URL (como você pediu).
+     Se no seu projeto o Maps já é carregado de outro jeito, remova esta linha. -->
+<script src="https://maps.googleapis.com/maps/api/js"></script>
 
-    <script>
-        let map;
-        let directionsService;
-        let directionsRenderer;
-        let startMarker;
-        let endMarker;
-        let currentLocation;
+<script>
+    let map;
+    let polyline;           // Linha que representa a rota
+    let path = [];          // Array de coordenadas {lat, lng}
+    let watchId = null;     // ID do watchPosition
+    let currentMarker = null;
 
-        // Atualiza data/hora em horário de Brasília
-        function updateCurrentDate() {
-            const now = new Date();
-            const formatter = new Intl.DateTimeFormat('pt-BR', {
-                timeZone: 'America/Sao_Paulo',
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit',
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit'
-            });
-            document.getElementById('currentDate').textContent = formatter.format(now);
-        }
+    const trackingStatusEl = document.getElementById('trackingStatus');
+    const infoStatusEl = document.getElementById('infoStatus');
+    const dateTimeEl = document.getElementById('currentDateTime');
 
-        updateCurrentDate();
-        setInterval(updateCurrentDate, 1000);
-
-        // Inicializar mapa / rota
-        function initMap() {
-            const initialCenter = { lat: -30.0346, lng: -51.2177 }; // Porto Alegre
-
-            map = new google.maps.Map(document.getElementById('map'), {
-                center: initialCenter,
-                zoom: 14,
-                mapTypeControl: true,
-                fullscreenControl: true,
-                zoomControl: true,
-                streetViewControl: true
-            });
-
-            directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer({
-                map: map,
-                suppressMarkers: false,
-                polylineOptions: {
-                    strokeColor: '#2196F3',
-                    strokeWeight: 5,
-                    strokeOpacity: 0.8
-                }
-            });
-
-            // Tenta pegar localização atual
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        currentLocation = {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude
-                        };
-                        map.setCenter(currentLocation);
-                        if (!startMarker) {
-                            startMarker = new google.maps.Marker({
-                                map,
-                                position: currentLocation,
-                                title: 'Sua localização atual'
-                            });
-                        }
-                    },
-                    (error) => {
-                        console.log('Erro ao obter localização:', error);
-                        showInfo('❌ Erro ao obter localização atual');
-                    }
-                );
-            }
-        }
-
-        // Mostrar mensagem de status
-        function showInfo(msg) {
-            const el = document.getElementById('statusInfo');
-            el.textContent = msg;
-            el.classList.add('active');
-            setTimeout(() => el.classList.remove('active'), 3000);
-        }
-
-        // Limpar rota (BOTÃO NOVO)
-        function clearRoute() {
-            if (directionsRenderer) {
-                directionsRenderer.setDirections({ routes: [] });
-            }
-
-            if (startMarker) {
-                startMarker.setMap(null);
-                startMarker = null;
-            }
-
-            if (endMarker) {
-                endMarker.setMap(null);
-                endMarker = null;
-            }
-
-            showInfo('✓ Rota removida do mapa');
-        }
-
-        // Usar localização atual como partida
-        function useCurrentLocation() {
-            if (currentLocation) {
-                map.setCenter(currentLocation);
-                if (startMarker) startMarker.setMap(null);
-                startMarker = new google.maps.Marker({
-                    map,
-                    position: currentLocation,
-                    title: 'Partida (localização atual)'
-                });
-                document.getElementById('startAddress').value = 'Localização atual';
-                document.getElementById('startNumber').value = '';
-            } else {
-                showInfo('❌ Localização atual indisponível');
-            }
-        }
-
-        // Limpar campos de busca de destino
-        function clearSearch() {
-            document.getElementById('destinationAddress').value = '';
-            document.getElementById('destinationNumber').value = '';
-        }
-
-        // Navegar (traçar rota simples usando texto)
-        function navigate() {
-            const startAddress = document.getElementById('startAddress').value.trim();
-            const startNumber = document.getElementById('startNumber').value.trim();
-            const destAddress = document.getElementById('destinationAddress').value.trim();
-            const destNumber = document.getElementById('destinationNumber').value.trim();
-
-            if (!startAddress || !destAddress) {
-                showInfo('❌ Preencha endereço de partida e destino');
-                return;
-            }
-
-            const startFull = startNumber
-                ? `${startAddress} ${startNumber}, Porto Alegre, RS, Brasil`
-                : `${startAddress}, Porto Alegre, RS, Brasil`;
-
-            const destFull = destNumber
-                ? `${destAddress} ${destNumber}, Porto Alegre, RS, Brasil`
-                : `${destAddress}, Porto Alegre, RS, Brasil`;
-
-            directionsService.route(
-                {
-                    origin: startFull,
-                    destination: destFull,
-                    travelMode: google.maps.TravelMode.DRIVING
-                },
-                (response, status) => {
-                    if (status === google.maps.DirectionsStatus.OK) {
-                        directionsRenderer.setDirections(response);
-                        showInfo('✓ Rota calculada com sucesso');
-
-                        // Ajusta marcadores
-                        const leg = response.routes[0].legs[0];
-
-                        if (startMarker) startMarker.setMap(null);
-                        if (endMarker) endMarker.setMap(null);
-
-                        startMarker = new google.maps.Marker({
-                            map,
-                            position: leg.start_location,
-                            title: 'Partida'
-                        });
-
-                        endMarker = new google.maps.Marker({
-                            map,
-                            position: leg.end_location,
-                            title: 'Destino'
-                        });
-                    } else {
-                        showInfo('❌ Erro ao calcular rota: ' + status);
-                    }
-                }
-            );
-        }
-
-        // Eventos
-        document.getElementById('btnCurrentLocation').addEventListener('click', useCurrentLocation);
-        document.getElementById('btnClearSearch').addEventListener('click', clearSearch);
-        document.getElementById('btnNavigate').addEventListener('click', navigate);
-        document.getElementById('btnClearRoute').addEventListener('click', clearRoute);
-
-        // Inicializa mapa ao carregar a página
-        window.addEventListener('load', () => {
-            if (window.google && google.maps) {
-                initMap();
-            } else {
-                showInfo('❌ Biblioteca Google Maps não carregada');
-            }
+    // Atualiza data/hora em horário de Brasília
+    function updateDateTime() {
+        const now = new Date();
+        const formatter = new Intl.DateTimeFormat('pt-BR', {
+            timeZone: 'America/Sao_Paulo',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
         });
-    </script>
+        dateTimeEl.textContent = formatter.format(now);
+    }
+    updateDateTime();
+    setInterval(updateDateTime, 1000);
+
+    // Inicializa o mapa
+    function initMap() {
+        const initialCenter = { lat: -30.0346, lng: -51.2177 }; // Porto Alegre como fallback
+
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: initialCenter,
+            zoom: 15,
+            mapTypeControl: false,
+            fullscreenControl: true,
+            zoomControl: true,
+            streetViewControl: false
+        });
+
+        // Tenta centralizar na localização atual assim que abre
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const pos = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    };
+                    map.setCenter(pos);
+                    addCurrentMarker(pos);
+                },
+                () => {
+                    setInfo('Não foi possível obter a localização inicial (permissão negada ou erro).');
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+            );
+        } else {
+            setInfo('Este navegador não suporta geolocalização.');
+        }
+    }
+
+    // Atualiza caixa de status de rastreamento
+    function setTrackingActive(active) {
+        if (active) {
+            trackingStatusEl.innerHTML = 'Rastreamento: <strong>Ativo</strong>';
+        } else {
+            trackingStatusEl.innerHTML = 'Rastreamento: <strong>Parado</strong>';
+        }
+    }
+
+    // Atualiza caixa de informações
+    function setInfo(msg) {
+        infoStatusEl.textContent = msg;
+    }
+
+    // Adiciona ou move o marcador da posição atual
+    function addCurrentMarker(position) {
+        if (!map) return;
+
+        if (!currentMarker) {
+            currentMarker = new google.maps.Marker({
+                map,
+                position,
+                title: 'Sua posição atual'
+            });
+        } else {
+            currentMarker.setPosition(position);
+        }
+    }
+
+    // Inicia o rastreamento (watchPosition)
+    function startTracking() {
+        if (!navigator.geolocation) {
+            setInfo('Geolocalização não suportada pelo navegador.');
+            return;
+        }
+
+        // Se já está rastreando, não faz nada
+        if (watchId !== null) {
+            setInfo('Rastreamento já está ativo.');
+            return;
+        }
+
+        watchId = navigator.geolocation.watchPosition(
+            (position) => {
+                const pos = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude
+                };
+
+                // Atualiza marcador atual
+                addCurrentMarker(pos);
+
+                // Adiciona ponto ao caminho
+                path.push(pos);
+
+                // Se a polyline ainda não existe, cria
+                if (!polyline) {
+                    polyline = new google.maps.Polyline({
+                        map,
+                        path: path,
+                        geodesic: true,
+                        strokeColor: '#ff0000',
+                        strokeOpacity: 0.9,
+                        strokeWeight: 4
+                    });
+                } else {
+                    polyline.setPath(path);
+                }
+
+                // Centraliza suavemente no ponto atual
+                map.panTo(pos);
+
+                setInfo('Rastreamento em andamento. Pontos na rota: ' + path.length);
+                setTrackingActive(true);
+            },
+            (error) => {
+                let msg = 'Erro ao rastrear localização.';
+                if (error.code === error.PERMISSION_DENIED) {
+                    msg = 'Permissão de localização negada.';
+                } else if (error.code === error.POSITION_UNAVAILABLE) {
+                    msg = 'Localização indisponível.';
+                } else if (error.code === error.TIMEOUT) {
+                    msg = 'Tempo esgotado ao obter localização.';
+                }
+                setInfo('❌ ' + msg);
+                stopTracking();
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+
+        setInfo('Iniciando rastreamento...');
+        setTrackingActive(true);
+    }
+
+    // Para o rastreamento
+    function stopTracking() {
+        if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+        }
+        setTrackingActive(false);
+        setInfo('Rastreamento parado. A rota permanece desenhada até você limpar.');
+    }
+
+    // Limpa a rota do mapa (polyline) e zera o caminho
+    function clearRoute() {
+        if (polyline) {
+            polyline.setMap(null);
+            polyline = null;
+        }
+        path = [];
+        setInfo('Rota limpa do mapa. Você pode iniciar um novo rastreamento.');
+    }
+
+    // Liga os botões
+    document.getElementById('btnStart').addEventListener('click', startTracking);
+    document.getElementById('btnStop').addEventListener('click', stopTracking);
+    document.getElementById('btnClear').addEventListener('click', clearRoute);
+
+    // Inicializa o mapa ao carregar a página
+    window.addEventListener('load', () => {
+        if (window.google && google.maps) {
+            initMap();
+        } else {
+            setInfo('❌ Biblioteca Google Maps não carregada.');
+        }
+    });
+</script>
 </body>
 </html>
