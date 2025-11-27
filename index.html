@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rastreador de Trajeto - Navegação em Tempo Real</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-routing-machine/3.2.12/leaflet-routing-machine.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -154,6 +158,7 @@
             justify-content: space-between;
             align-items: center;
             gap: 10px;
+            cursor: pointer;
         }
 
         .search-result-item:hover {
@@ -456,6 +461,10 @@
                 grid-column: 1 / -1;
             }
         }
+
+        .leaflet-routing-container {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -560,16 +569,13 @@
         </div>
     </div>
 
-    <script async defer src="https://maps.googleapis.com/maps/api/js?key=SUA_API_KEY_AQUI&libraries=geometry"></script>
-
     <script>
         // ============= VARIÁVEIS GLOBAIS =============
         let map;
         let userMarker;
         let trajetoPolyline;
         let destinoMarker;
-        let directionsRenderer;
-        let directionsService;
+        let rotaPolyline;
         let rastreandoAtivo = false;
         let pontosTrajeto = [];
         let distanciaTotal = 0;
@@ -584,67 +590,57 @@
         function inicializarMapa() {
             if (map) return;
 
-            const opcoesMapa = {
-                zoom: 18,
-                center: { lat: -30.0326, lng: -51.2093 },
-                mapTypeId: 'roadmap',
-                streetViewControl: false,
-                fullscreenControl: false
-            };
+            // Criar mapa com Leaflet (OpenStreetMap)
+            map = L.map('map').setView([-30.0326, -51.2093], 18);
 
-            map = new google.maps.Map(document.getElementById('map'), opcoesMapa);
-            directionsService = new google.maps.DirectionsService();
-            directionsRenderer = new google.maps.DirectionsRenderer({
-                map: map,
-                suppressMarkers: true,
-                polylineOptions: {
-                    strokeColor: '#667eea',
-                    strokeOpacity: 0.6,
-                    strokeWeight: 3
-                }
-            });
+            // Layer do mapa
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19,
+                minZoom: 1
+            }).addTo(map);
 
-            // Trajeto pintado com ALTA PRECISÃO
-            trajetoPolyline = new google.maps.Polyline({
-                map: map,
-                geodesic: true,
-                strokeColor: '#00d4ff',
-                strokeOpacity: 0.95,
-                strokeWeight: 6,
-                path: [],
-                zIndex: 10
-            });
+            // Trajeto (linha azul com ALTA PRECISÃO)
+            trajetoPolyline = L.polyline([], {
+                color: '#00d4ff',
+                weight: 6,
+                opacity: 0.95,
+                lineCap: 'round',
+                lineJoin: 'round'
+            }).addTo(map);
+
+            // Rota (linha roxa para destino)
+            rotaPolyline = L.polyline([], {
+                color: '#667eea',
+                weight: 3,
+                opacity: 0.6,
+                lineCap: 'round',
+                lineJoin: 'round',
+                dashArray: '5, 5'
+            }).addTo(map);
 
             // Marcador do usuário
-            userMarker = new google.maps.Marker({
-                map: map,
-                title: 'Sua Posição',
-                zIndex: 20,
-                icon: {
-                    path: google.maps.SymbolPath.CIRCLE,
-                    scale: 10,
-                    fillColor: '#00d084',
-                    fillOpacity: 1,
-                    strokeColor: 'white',
-                    strokeWeight: 3
-                }
-            });
+            userMarker = L.circleMarker([-30.0326, -51.2093], {
+                radius: 10,
+                fillColor: '#00d084',
+                color: 'white',
+                weight: 3,
+                opacity: 1,
+                fillOpacity: 1,
+                zIndex: 1000
+            }).addTo(map).bindPopup('Sua Posição');
 
             // Marcador de destino
-            destinoMarker = new google.maps.Marker({
-                map: map,
-                title: 'Destino',
-                visible: false,
-                zIndex: 15,
-                icon: {
-                    path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
-                    scale: 8,
-                    fillColor: '#667eea',
-                    fillOpacity: 1,
-                    strokeColor: 'white',
-                    strokeWeight: 2
-                }
-            });
+            destinoMarker = L.marker([-30.0326, -51.2093], {
+                icon: L.icon({
+                    iconUrl: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMiIgaGVpZ2h0PSIzMiIgdmlld0JveD0iMCAwIDMyIDMyIj48cGF0aCBkPSJNMTYgMEMxMCA1IDE0IDEwIDE0IDE0YzAgMy4zIDEuMyA2IDE2IDZzMi03IDE4LTEwYzAgNCAyLjMgOCA0IDE0cy0zIDEwLTQgMTB6Ii8+PC9zdmc+',
+                    iconSize: [32, 32],
+                    iconAnchor: [16, 32]
+                }),
+                zIndex: 900
+            }).addTo(map).bindPopup('Destino');
+
+            destinoMarker.setLatLng([-999, -999]);
 
             obterLocalizacaoAtual();
             configurarBuscaEnderecos();
@@ -665,10 +661,8 @@
                     
                     ultimaPosicao = { lat: latitude, lng: longitude };
                     
-                    map.setCenter({ lat: latitude, lng: longitude });
-                    map.setZoom(18);
-                    
-                    userMarker.setPosition({ lat: latitude, lng: longitude });
+                    map.setView([latitude, longitude], 18);
+                    userMarker.setLatLng([latitude, longitude]);
                     
                     document.getElementById('latitude').textContent = latitude.toFixed(6);
                     document.getElementById('longitude').textContent = longitude.toFixed(6);
@@ -712,68 +706,63 @@
         }
 
         function buscarEnderecos(query) {
-            const geocoder = new google.maps.Geocoder();
-            
-            geocoder.geocode({ 
-                address: query,
-                componentRestrictions: { country: 'BR' }
-            }, function(results, status) {
-                if (status === 'OK' && results.length > 0) {
+            // Usar Nominatim (OpenStreetMap)
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=br&limit=5`)
+                .then(r => r.json())
+                .then(results => {
                     const resultsDiv = document.getElementById('searchResults');
                     resultsDiv.innerHTML = '';
                     
-                    results.slice(0, 5).forEach((result) => {
-                        const div = document.createElement('div');
-                        div.className = 'search-result-item';
+                    if (results.length > 0) {
+                        results.forEach((result) => {
+                            const div = document.createElement('div');
+                            div.className = 'search-result-item';
+                            
+                            const textDiv = document.createElement('div');
+                            textDiv.className = 'search-result-text';
+                            textDiv.innerHTML = `
+                                <strong>${result.name || result.display_name.split(',')[0]}</strong>
+                                <small>${result.display_name}</small>
+                            `;
+                            
+                            const btnRota = document.createElement('button');
+                            btnRota.className = 'btn-rota';
+                            btnRota.textContent = '→ Rota';
+                            btnRota.type = 'button';
+                            btnRota.onclick = (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                definirRota(result);
+                            };
+                            
+                            div.appendChild(textDiv);
+                            div.appendChild(btnRota);
+                            resultsDiv.appendChild(div);
+                        });
                         
-                        const textDiv = document.createElement('div');
-                        textDiv.className = 'search-result-text';
-                        textDiv.innerHTML = `
-                            <strong>${result.formatted_address.split(',')[0]}</strong>
-                            <small>${result.formatted_address}</small>
-                        `;
-                        
-                        const btnRota = document.createElement('button');
-                        btnRota.className = 'btn-rota';
-                        btnRota.textContent = '→ Rota';
-                        btnRota.type = 'button';
-                        btnRota.onclick = (e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            definirRota(result);
-                        };
-                        
-                        div.appendChild(textDiv);
-                        div.appendChild(btnRota);
-                        resultsDiv.appendChild(div);
-                    });
-                    
-                    resultsDiv.classList.add('show');
-                } else {
-                    document.getElementById('searchResults').classList.remove('show');
-                }
-            });
+                        resultsDiv.classList.add('show');
+                    }
+                })
+                .catch(err => console.error('Erro na busca:', err));
         }
 
         function definirRota(result) {
-            const location = result.geometry.location;
-            destinoSelecionado = { lat: location.lat(), lng: location.lng() };
+            const lat = parseFloat(result.lat);
+            const lng = parseFloat(result.lon);
+            destinoSelecionado = { lat: lat, lng: lng };
             
-            document.getElementById('inputEndereço').value = result.formatted_address;
+            document.getElementById('inputEndereço').value = result.display_name;
             document.getElementById('searchResults').classList.remove('show');
             
-            destinoMarker.setPosition(destinoSelecionado);
-            destinoMarker.setVisible(true);
+            destinoMarker.setLatLng([lat, lng]);
+            
+            const bounds = L.latLngBounds(
+                [ultimaPosicao.lat, ultimaPosicao.lng],
+                [lat, lng]
+            );
+            map.fitBounds(bounds, { padding: [100, 100] });
 
-            const bounds = new google.maps.LatLngBounds();
-            if (ultimaPosicao) {
-                bounds.extend(new google.maps.LatLng(ultimaPosicao.lat, ultimaPosicao.lng));
-            }
-            bounds.extend(new google.maps.LatLng(destinoSelecionado.lat, destinoSelecionado.lng));
-            map.fitBounds(bounds);
-
-            tracarRotaGoogle(ultimaPosicao || { lat: -30.0326, lng: -51.2093 }, destinoSelecionado);
-            mostrarAlerta(`Rota para: ${result.formatted_address}`, 'success');
+            mostrarAlerta(`Rota para: ${result.display_name}`, 'success');
         }
 
         function setarPorCoordenadas() {
@@ -791,39 +780,21 @@
             }
 
             destinoSelecionado = { lat: lat, lng: lng };
-            destinoMarker.setPosition(destinoSelecionado);
-            destinoMarker.setVisible(true);
+            destinoMarker.setLatLng([lat, lng]);
 
-            const bounds = new google.maps.LatLngBounds();
-            bounds.extend(new google.maps.LatLng(ultimaPosicao.lat, ultimaPosicao.lng));
-            bounds.extend(new google.maps.LatLng(destinoSelecionado.lat, destinoSelecionado.lng));
-            map.fitBounds(bounds);
-
-            tracarRotaGoogle(ultimaPosicao, destinoSelecionado);
-            mostrarAlerta(`Rota para: ${lat.toFixed(4)}, ${lng.toFixed(4)}`, 'success');
-        }
-
-        function tracarRotaGoogle(origem, destino) {
-            if (!origem || !destino || !map || !directionsService) return;
-
-            directionsService.route(
-                {
-                    origin: new google.maps.LatLng(origem.lat, origem.lng),
-                    destination: new google.maps.LatLng(destino.lat, destino.lng),
-                    travelMode: google.maps.TravelMode.DRIVING
-                },
-                function(result, status) {
-                    if (status === google.maps.DirectionsStatus.OK) {
-                        directionsRenderer.setDirections(result);
-                    }
-                }
+            const bounds = L.latLngBounds(
+                [ultimaPosicao.lat, ultimaPosicao.lng],
+                [lat, lng]
             );
+            map.fitBounds(bounds, { padding: [100, 100] });
+
+            mostrarAlerta(`Rota para: ${lat.toFixed(4)}, ${lng.toFixed(4)}`, 'success');
         }
 
         function limparDestino() {
             destinoSelecionado = null;
-            destinoMarker.setVisible(false);
-            directionsRenderer.setDirections(null);
+            destinoMarker.setLatLng([-999, -999]);
+            rotaPolyline.setLatLngs([]);
             document.getElementById('inputEndereço').value = '';
             document.getElementById('inputLatitude').value = '';
             document.getElementById('inputLongitude').value = '';
@@ -851,7 +822,7 @@
             
             mostrarAlerta('Rastreamento iniciado! Capturando pontos...', 'success');
 
-            // ATUALIZAR A CADA 1 SEGUNDO para máxima precisão
+            // Atualizar a cada 1 segundo
             watchId = navigator.geolocation.watchPosition(
                 atualizarPosicao,
                 (error) => console.error('Erro GPS:', error),
@@ -870,40 +841,34 @@
             const novoPonto = { lat: latitude, lng: longitude };
             pontos_capturados++;
 
-            // CAPTURAR TODOS OS PONTOS (ou com filtro mínimo)
             if (!ultimaPosicao) {
-                // Primeiro ponto
                 pontosTrajeto.push(novoPonto);
                 ultimaPosicao = novoPonto;
             } else {
-                const distancia = google.maps.geometry.spherical.computeDistanceBetween(
-                    new google.maps.LatLng(ultimaPosicao.lat, ultimaPosicao.lng),
-                    new google.maps.LatLng(latitude, longitude)
-                );
+                // Calcular distância entre pontos (em metros)
+                const distancia = calcularDistancia(ultimaPosicao.lat, ultimaPosicao.lng, latitude, longitude);
 
-                // REDUZIR FILTRO: Capturar pontos com apenas 1 metro de diferença (precisão máxima)
+                // Capturar pontos com apenas 1 metro de diferença
                 if (distancia > 1) {
                     pontosTrajeto.push(novoPonto);
                     distanciaTotal += distancia;
                     ultimaPosicao = novoPonto;
                     
-                    // ATUALIZAR O TRAÇO IMEDIATAMENTE
-                    trajetoPolyline.setPath(pontosTrajeto);
-                } else if (distancia > 0) {
-                    // Mesmo com pequenas distâncias, atualizar o último ponto
-                    ultimaPosicao = novoPonto;
+                    // Atualizar o polyline imediatamente
+                    const latlngs = pontosTrajeto.map(p => [p.lat, p.lng]);
+                    trajetoPolyline.setLatLngs(latlngs);
                 }
             }
 
-            // Centralizar mapa no usuário
-            userMarker.setPosition({ lat: latitude, lng: longitude });
-            map.setCenter({ lat: latitude, lng: longitude });
+            // Centralizar e atualizar marcador
+            userMarker.setLatLng([latitude, longitude]);
+            map.setView([latitude, longitude], 18);
 
-            // ATUALIZAR INTERFACE EM TEMPO REAL
+            // Atualizar interface
             document.getElementById('latitude').textContent = latitude.toFixed(6);
             document.getElementById('longitude').textContent = longitude.toFixed(6);
             document.getElementById('distancia').textContent = (distanciaTotal / 1000).toFixed(3) + ' km';
-            document.getElementById('pontos').textContent = pontosTrajeto.length + ' (capturados: ' + pontos_capturados + ')';
+            document.getElementById('pontos').textContent = pontosTrajeto.length + ' (cap: ' + pontos_capturados + ')';
             document.getElementById('tempo').textContent = formatarTempo(Date.now() - tempoInicio);
             document.getElementById('statusGPS').textContent = '✅ Conectado';
 
@@ -914,9 +879,22 @@
 
             atualizarIndicadorPrecisao(accuracy);
 
+            // Atualizar rota para destino
             if (destinoSelecionado) {
-                tracarRotaGoogle(novoPonto, destinoSelecionado);
+                const rota = [[latitude, longitude], [destinoSelecionado.lat, destinoSelecionado.lng]];
+                rotaPolyline.setLatLngs(rota);
             }
+        }
+
+        function calcularDistancia(lat1, lng1, lat2, lng2) {
+            const R = 6371000; // Raio da Terra em metros
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
         }
 
         function pararRastreamento() {
@@ -954,7 +932,7 @@
                 distanciaTotal = 0;
                 ultimaPosicao = null;
                 pontos_capturados = 0;
-                trajetoPolyline.setPath([]);
+                trajetoPolyline.setLatLngs([]);
 
                 document.getElementById('distancia').textContent = '0 km';
                 document.getElementById('pontos').textContent = '0';
@@ -1025,24 +1003,14 @@
 
         document.getElementById('btnCentralizar').addEventListener('click', function() {
             if (ultimaPosicao) {
-                map.setCenter(new google.maps.LatLng(ultimaPosicao.lat, ultimaPosicao.lng));
-                map.setZoom(18);
+                map.setView([ultimaPosicao.lat, ultimaPosicao.lng], 18);
             }
         });
 
-        // Inicializar mapa quando o Google Maps carregar
-        window.addEventListener('load', function() {
-            if (document.readyState === 'complete' || document.readyState === 'interactive') {
-                inicializarMapa();
-            }
+        // Inicializar
+        window.addEventListener('load', () => {
+            inicializarMapa();
         });
-
-        // Inicializar também com delay para garantir
-        setTimeout(() => {
-            if (typeof google !== 'undefined' && google.maps) {
-                inicializarMapa();
-            }
-        }, 1000);
     </script>
 </body>
 </html>
