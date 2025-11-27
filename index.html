@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rastreador de Trajeto - Navegação em Tempo Real</title>
-    <script src="https://maps.googleapis.com/maps/api/js?key=SUA_API_KEY_AQUI&libraries=places,geometry,directions"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=SUA_API_KEY_AQUI&libraries=places,geometry,directions&callback=initMap" async defer></script>
     <style>
         * {
             margin: 0;
@@ -12,15 +12,22 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: #f5f5f5;
-            height: 100vh;
             overflow: hidden;
         }
 
         .container {
             display: flex;
+            width: 100%;
             height: 100vh;
         }
 
@@ -31,8 +38,8 @@
         }
 
         #map {
-            width: 100%;
-            height: 100%;
+            width: 100% !important;
+            height: 100% !important;
         }
 
         .location-button {
@@ -134,6 +141,9 @@
             overflow-y: auto;
             margin-top: 8px;
             display: none;
+            z-index: 1000;
+            position: absolute;
+            width: calc(100% - 40px);
         }
 
         .search-results.show {
@@ -149,6 +159,7 @@
             justify-content: space-between;
             align-items: center;
             gap: 10px;
+            cursor: pointer;
         }
 
         .search-result-item:hover {
@@ -394,47 +405,6 @@
             display: none !important;
         }
 
-        .destination-item {
-            background: #f8f9fa;
-            padding: 10px;
-            border-radius: 6px;
-            margin-bottom: 8px;
-            border-left: 3px solid #667eea;
-            cursor: pointer;
-            transition: all 0.2s;
-            position: relative;
-        }
-
-        .destination-item:hover {
-            background: #e7f0ff;
-            border-left-color: #00d4ff;
-        }
-
-        .destination-item small {
-            display: block;
-            font-size: 11px;
-            color: #666;
-            margin-top: 3px;
-        }
-
-        .destination-item .btn-delete {
-            position: absolute;
-            right: 8px;
-            top: 8px;
-            background: #ff6b6b;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            padding: 3px 6px;
-            cursor: pointer;
-            font-size: 11px;
-            transition: all 0.2s;
-        }
-
-        .destination-item .btn-delete:hover {
-            background: #ee5a6f;
-        }
-
         .alert {
             padding: 12px;
             border-radius: 6px;
@@ -483,7 +453,7 @@
             }
 
             #map {
-                height: 100%;
+                height: 100% !important;
             }
 
             .button-group {
@@ -500,7 +470,7 @@
     <div class="container">
         <!-- MAPA -->
         <div class="map-container">
-            <div id="map"></div>
+            <div id="map" style="width: 100%; height: 100%;"></div>
             <button class="location-button" id="btnCentralizar" title="Centralizar na localização">📍</button>
         </div>
 
@@ -536,7 +506,7 @@
                         <input type="number" id="inputLatitude" placeholder="Lat" step="0.0001">
                         <input type="number" id="inputLongitude" placeholder="Lng" step="0.0001">
                     </div>
-                    <button class="btn btn-info" style="width: 100%;" onclick="setarPorCoordenadas()">✓ Usar Coordenadas</button>
+                    <button class="btn btn-info" style="width: 100%; margin-top: 8px;" onclick="setarPorCoordenadas()">✓ Usar Coordenadas</button>
                 </div>
 
                 <!-- BOTÕES PRINCIPAIS -->
@@ -604,7 +574,6 @@
         let userMarker;
         let trajetoPolyline;
         let destinoMarker;
-        let routePolyline;
         let directionsRenderer;
         let rastreandoAtivo = false;
         let pontosTrajeto = [];
@@ -615,19 +584,13 @@
         let destinoSelecionado = null;
         let ultimaVelocidade = 0;
 
-        // ============= INICIALIZAÇÃO =============
-        window.addEventListener('load', function() {
-            setTimeout(inicializarMapa, 100);
-        });
-
-        // ============= MAPA COM LOCALIZAÇÃO AUTOMÁTICA =============
-        function inicializarMapa() {
-            if (map) return;
-
+        // ============= INICIALIZAÇÃO DO MAPA =============
+        function initMap() {
             const opcoesMapa = {
                 zoom: 18,
                 center: { lat: -30.0326, lng: -51.2093 },
-                mapTypeId: google.maps.MapTypeId.ROADMAP
+                mapTypeId: 'roadmap',
+                streetViewControl: false
             };
 
             map = new google.maps.Map(document.getElementById('map'), opcoesMapa);
@@ -642,9 +605,10 @@
                 path: []
             });
 
-            // Rota para destino
+            // Rota para destino (usando DirectionsRenderer)
             directionsRenderer = new google.maps.DirectionsRenderer({
                 map: map,
+                suppressMarkers: true,
                 polylineOptions: {
                     strokeColor: '#667eea',
                     strokeOpacity: 0.6,
@@ -757,7 +721,7 @@
                     const resultsDiv = document.getElementById('searchResults');
                     resultsDiv.innerHTML = '';
                     
-                    results.slice(0, 5).forEach((result, index) => {
+                    results.slice(0, 5).forEach((result) => {
                         const div = document.createElement('div');
                         div.className = 'search-result-item';
                         
@@ -771,7 +735,9 @@
                         const btnRota = document.createElement('button');
                         btnRota.className = 'btn-rota';
                         btnRota.textContent = '→ Rota';
+                        btnRota.type = 'button';
                         btnRota.onclick = (e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             definirRota(result);
                         };
@@ -805,7 +771,7 @@
             bounds.extend(destinoSelecionado);
             map.fitBounds(bounds);
 
-            tracarRotaGoogle(ultimaPosicao, destinoSelecionado);
+            tracarRotaGoogle(ultimaPosicao || { lat: -30.0326, lng: -51.2093 }, destinoSelecionado);
             mostrarAlerta(`Rota para: ${result.formatted_address}`, 'success');
         }
 
@@ -837,7 +803,7 @@
         }
 
         function tracarRotaGoogle(origem, destino) {
-            if (!origem || !destino) return;
+            if (!origem || !destino || !map) return;
 
             const directionsService = new google.maps.DirectionsService();
 
@@ -845,13 +811,13 @@
                 {
                     origin: new google.maps.LatLng(origem.lat, origem.lng),
                     destination: new google.maps.LatLng(destino.lat, destino.lng),
-                    travelMode: 'DRIVING'
+                    travelMode: google.maps.TravelMode.DRIVING
                 },
                 function(result, status) {
-                    if (status === 'OK') {
+                    if (status === google.maps.DirectionsStatus.OK) {
                         directionsRenderer.setDirections(result);
                     } else {
-                        mostrarAlerta('Erro ao traçar rota', 'danger');
+                        console.error('Erro ao traçar rota:', status);
                     }
                 }
             );
@@ -860,7 +826,7 @@
         function limparDestino() {
             destinoSelecionado = null;
             destinoMarker.setVisible(false);
-            directionsRenderer.setDirections({directions: null});
+            directionsRenderer.setDirections(null);
             document.getElementById('inputEndereço').value = '';
             document.getElementById('inputLatitude').value = '';
             document.getElementById('inputLongitude').value = '';
@@ -889,7 +855,7 @@
 
             watchId = navigator.geolocation.watchPosition(
                 atualizarPosicao,
-                () => {},
+                (error) => console.error('Erro GPS:', error),
                 {
                     enableHighAccuracy: true,
                     timeout: 5000,
