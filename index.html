@@ -1,931 +1,208 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rastreador de Trajeto - Polícia</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <!-- Versão oficial do leaflet-image (mapbox/leaflet-image) -->
-    <script src="https://unpkg.com/leaflet-image/leaflet-image.js"></script>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: #1a1a1a; color: #333;
-        }
-        .container { display: flex; height: 100vh; }
-        #map { flex: 1; width: 100%; background: #e5e3df; }
-        #map.click-mode { cursor: crosshair !important; }
-        .sidebar {
-            width: 350px; background: white; padding: 20px;
-            overflow-y: auto; box-shadow: -2px 0 5px rgba(0,0,0,0.1);
-            border-right: 3px solid #0066cc;
-        }
-        h1 { color: #0066cc; font-size: 20px; margin-bottom: 20px; text-align: center; }
-        .section { margin-bottom: 25px; }
-        .section-title {
-            font-size: 14px; font-weight: bold; color: #555;
-            margin-bottom: 10px; text-transform: uppercase;
-        }
-        label {
-            display: block; font-size: 12px; font-weight: 600;
-            color: #666; margin-bottom: 5px;
-        }
-        input[type="text"], input[type="number"], select {
-            width: 100%; padding: 10px; margin-bottom: 10px;
-            border: 1px solid #ddd; border-radius: 4px; font-size: 13px;
-        }
-        input[type="text"]:focus, input[type="number"]:focus, select:focus {
-            outline: none; border-color: #0066cc;
-            box-shadow: 0 0 5px rgba(0,102,204,0.3);
-        }
-        button {
-            width: 100%; padding: 12px; margin: 8px 0;
-            border: none; border-radius: 4px; font-size: 14px;
-            font-weight: bold; cursor: pointer; transition: all 0.3s ease;
-        }
-        .btn-primary { background: #0066cc; color: white; }
-        .btn-primary:hover { background: #0052a3; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-success:hover { background: #218838; }
-        .btn-danger { background: #dc3545; color: white; }
-        .btn-danger:hover { background: #c82333; }
-        .btn-secondary { background: #6c757d; color: white; }
-        .btn-secondary:hover { background: #5a6268; }
-        .btn-info { background: #17a2b8; color: white; padding: 8px; font-size: 12px; margin: 4px 0; }
-        .btn-info:hover { background: #138496; }
-        .status-box {
-            background: #f8f9fa; border-left: 4px solid #0066cc;
-            padding: 12px; margin-bottom: 15px; border-radius: 4px; font-size: 12px;
-        }
-        .status-item { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .status-label { font-weight: bold; color: #555; }
-        .status-value { color: #0066cc; font-weight: bold; }
-        .color-legend {
-            background: #f8f9fa; border: 1px solid #ddd;
-            border-radius: 4px; padding: 10px; margin-top: 15px; font-size: 12px;
-        }
-        .legend-item { display: flex; align-items: center; margin-bottom: 8px; }
-        .legend-color {
-            width: 15px; height: 15px; border-radius: 2px; margin-right: 8px;
-        }
-        .favorites-list, .history-list {
-            margin-top: 10px; max-height: 150px; overflow-y: auto;
-        }
-        .favorite-item, .history-item {
-            background: #f8f9fa; padding: 8px; margin: 5px 0; border-radius: 4px;
-            display: flex; justify-content: space-between; align-items: center; font-size: 12px;
-        }
-        .favorite-button {
-            background: #28a745; color: white; border: none;
-            padding: 3px 8px; border-radius: 3px; cursor: pointer; font-size: 10px;
-        }
-        .favorite-button:hover { background: #218838; }
-        .remove-button {
-            background: #dc3545; color: white; border: none;
-            padding: 3px 8px; border-radius: 3px; cursor: pointer;
-            font-size: 10px; margin-left: 5px;
-        }
-        .remove-button:hover { background: #c82333; }
-        .error-msg {
-            background: #f8d7da; border: 1px solid #f5c6cb;
-            color: #721c24; padding: 10px; border-radius: 4px;
-            margin: 10px 0; font-size: 12px;
-        }
-        .success-msg {
-            background: #d4edda; border: 1px solid #c3e6cb;
-            color: #155724; padding: 10px; border-radius: 4px;
-            margin: 10px 0; font-size: 12px;
-        }
-        .info-msg {
-            background: #d1ecf1; border: 1px solid #bee5eb;
-            color: #0c5460; padding: 10px; border-radius: 4px;
-            margin: 10px 0; font-size: 12px;
-        }
-        .search-container { position: relative; }
-        .autocomplete-suggestions {
-            position: absolute; background: white; border: 1px solid #ddd;
-            border-top: none; border-radius: 0 0 4px 4px;
-            max-height: 200px; overflow-y: auto; width: 100%;
-            z-index: 1000; display: none;
-        }
-        .autocomplete-suggestions.show { display: block; }
-        .suggestion-item {
-            padding: 10px; border-bottom: 1px solid #eee;
-            cursor: pointer; font-size: 12px; transition: background 0.2s;
-        }
-        .suggestion-item:hover { background: #e8f0ff; }
-        .suggestion-item:last-child { border-bottom: none; }
-        .search-buttons { display: flex; gap: 5px; }
-        .search-buttons button { flex: 1; margin: 0; padding: 10px; }
-        .navigation-section {
-            background: #e8f4f8; border: 2px solid #17a2b8;
-            border-radius: 4px; padding: 12px; margin: 10px 0;
-        }
-        .navigation-section h4 {
-            color: #17a2b8; font-size: 12px; margin-bottom: 8px;
-        }
-        .navigation-info { font-size: 11px; color: #555; margin-bottom: 8px; }
-        @media (max-width: 768px) {
-            .container { flex-direction: column; }
-            .sidebar {
-                width: 100%; max-height: 40vh;
-                border-right: none; border-bottom: 3px solid #0066cc;
-            }
-            #map { height: 60vh; }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <title>Trajeto ao Vivo - Policial</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { height: 65vh; width: 100%; }
+    .btn { margin: 4px; }
+    #controles, #historico, #favoritos { margin: 10px 0; }
+    #status { font-weight: bold; margin-left: 8px; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div id="map"></div>
-        <div class="sidebar">
-            <h1>🚔 Rastreador</h1>
-
-            <div class="section">
-                <div class="section-title">Localização Atual</div>
-                <div class="status-box">
-                    <div class="status-item">
-                        <span class="status-label">Latitude:</span>
-                        <span class="status-value" id="latitude">--</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Longitude:</span>
-                        <span class="status-value" id="longitude">--</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Precisão:</span>
-                        <span class="status-value" id="accuracy">--</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Velocidade:</span>
-                        <span class="status-value" id="speed">--</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Rastreamento:</span>
-                        <span class="status-value" id="trackingStatus" style="color:#dc3545;">Parado</span>
-                    </div>
-                </div>
-                <button class="btn-info" onclick="goToCurrentLocation()">📍 Ir para Localização Atual</button>
-            </div>
-
-            <div class="section">
-                <div class="section-title">Buscar Endereço</div>
-                <label>Digite endereço e número (ex: Rua das Flores 123):</label>
-                <div class="search-container">
-                    <input type="text" id="addressInput" placeholder="Ex: Rua das Flores 123 Porto Alegre" autocomplete="off">
-                    <div class="autocomplete-suggestions" id="suggestions"></div>
-                </div>
-                <div class="search-buttons">
-                    <button class="btn-primary" onclick="searchAddress()">🔍 Buscar</button>
-                    <button class="btn-secondary" onclick="clearSearch()">✕ Limpar</button>
-                </div>
-                <div id="searchMessage"></div>
-            </div>
-
-            <div id="navigationSection" class="navigation-section" style="display: none;">
-                <h4>🧭 Navegação</h4>
-                <div class="navigation-info" id="navigationInfo"></div>
-                <button class="btn-primary" onclick="navigateToSearched()">🗺️ Navegar para Endereço</button>
-                <button class="btn-danger" onclick="cancelNavigation()">❌ Cancelar</button>
-            </div>
-
-            <div class="section">
-                <div class="section-title">Adicionar Local no Mapa</div>
-                <label>Clique no mapa para marcar um local:</label>
-                <button id="mapClickBtn" class="btn-info" onclick="toggleMapClick()">🖱️ Ativar Modo Click</button>
-                <div id="mapClickMessage"></div>
-            </div>
-
-            <div id="mapClickNavSection" class="navigation-section" style="display: none;">
-                <h4>🧭 Navegação para Local Clicado</h4>
-                <div class="navigation-info" id="mapClickInfo"></div>
-                <button class="btn-primary" onclick="navigateToMapClick()">🗺️ Navegar para Local</button>
-                <button class="btn-danger" onclick="cancelMapClickNav()">❌ Cancelar</button>
-            </div>
-
-            <div class="section">
-                <div class="section-title">Coordenadas Manuais</div>
-                <label>Latitude:</label>
-                <input type="number" id="manualLat" placeholder="-30.0326" step="0.0001">
-                <label>Longitude:</label>
-                <input type="number" id="manualLng" placeholder="-51.2093" step="0.0001">
-                <button class="btn-primary" onclick="goToManualLocation()">📍 Ir para Local</button>
-            </div>
-
-            <div class="section">
-                <div class="section-title">Controle de Rastreamento</div>
-                <button class="btn-success" onclick="startTracking()">▶ Iniciar</button>
-                <button class="btn-danger" onclick="stopTracking()">⏹ Parar</button>
-                <button class="btn-secondary" onclick="clearPath()">🗑 Limpar Trajeto</button>
-                <button class="btn-primary" onclick="exportImage()">🖼️ Exportar Imagem</button>
-                <button class="btn-primary" onclick="exportCSV()">📄 Exportar Coordenadas</button>
-            </div>
-
-            <div class="section">
-                <div class="section-title">Histórico de Rastreamentos</div>
-                <div class="history-list" id="historyList"></div>
-            </div>
-
-            <div class="section">
-                <div class="section-title">Favoritos</div>
-                <label>Nome do Local:</label>
-                <input type="text" id="favoriteName" placeholder="Ex: Delegacia Centro">
-                <button class="btn-primary" onclick="addFavorite()">⭐ Adicionar Favorito</button>
-                <div class="favorites-list" id="favoritesList"></div>
-            </div>
-
-            <div class="color-legend">
-                <strong>Legenda de Cores:</strong>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #1f77d4;"></div>
-                    <span>Trajeto percorrido (ajustado à rua)</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #2ca02c;"></div>
-                    <span>Sua posição atual</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #d62728;"></div>
-                    <span>Endereço pesquisado</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #9467bd;"></div>
-                    <span>Local clicado</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #ff00ff;"></div>
-                    <span>Rota OSRM</span>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const GOOGLE_API_KEY = 'SUA_GOOGLE_API_KEY_AQUI';
-
-        let map;
-        let userMarker;
-        let currentLocation = null;
-
-        // Trajeto ajustado à rua (OSRM)
-        let pathPolyline = null;
-        let pathLatLngs = [];
-        let lastTrackedPoint = null;
-
-        // GPS bruto (se quiser usar depois)
-        let pathCoordinates = [];
-
-        let isTracking = false;
-        let watchId = null;
-        let hasInitialCenter = false;
-
-        let searchResultsMarkers = [];
-        let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
-        let trackHistory = JSON.parse(localStorage.getItem('trackHistory')) || [];
-        let currentTrackStartTime = null;
-
-        let autocompleteTimeout;
-        let mapClickMode = false;
-        let selectedSearchLocation = null;
-        let selectedMapClickLocation = null;
-        let mapClickMarker = null;
-        let routePolyline = null;
-
-        function initMap() {
-            const defaultLocation = [-30.0326, -51.2093];
-
-            map = L.map('map', { preferCanvas: true }).setView(defaultLocation, 16);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
-                maxZoom: 19,
-            }).addTo(map);
-
-            userMarker = L.marker(defaultLocation, {
-                title: 'Sua Posição',
-                icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                })
-            }).addTo(map);
-
-            map.on('click', function(e) {
-                if (mapClickMode) {
-                    handleMapClick(e.latlng);
-                }
-            });
-
-            if (navigator.geolocation) {
-                watchId = navigator.geolocation.watchPosition(
-                    (position) => {
-                        currentLocation = {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude,
-                        };
-
-                        updateLocationDisplay(position);
-                        userMarker.setLatLng([currentLocation.lat, currentLocation.lng]);
-
-                        if (!hasInitialCenter) {
-                            map.setView([currentLocation.lat, currentLocation.lng], 16);
-                            hasInitialCenter = true;
-                        }
-
-                        if (isTracking) {
-                            if (pathCoordinates.length === 0) {
-                                pathCoordinates.push({ ...currentLocation });
-                            } else {
-                                const lastRaw = pathCoordinates[pathCoordinates.length - 1];
-                                const dRaw = calculateDistanceInMeters(lastRaw, currentLocation);
-                                if (dRaw >= 0.5) {
-                                    pathCoordinates.push({ ...currentLocation });
-                                }
-                            }
-
-                            if (!lastTrackedPoint) {
-                                lastTrackedPoint = { ...currentLocation };
-                            } else {
-                                const dSeg = calculateDistanceInMeters(lastTrackedPoint, currentLocation);
-                                if (dSeg >= 2) {
-                                    extendRouteAlongRoad(lastTrackedPoint, currentLocation);
-                                    lastTrackedPoint = { ...currentLocation };
-                                }
-                            }
-                        }
-                    },
-                    (error) => {
-                        console.error('Erro no rastreamento:', error);
-                        if (isTracking) setTrackingStatus('erro');
-                    },
-                    { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
-                );
-            }
-
-            loadFavorites();
-            renderHistory();
-        }
-
-        function setTrackingStatus(status) {
-            const el = document.getElementById('trackingStatus');
-            if (!el) return;
-            if (status === 'ativo') {
-                el.textContent = 'Ativo';
-                el.style.color = '#28a745';
-            } else if (status === 'erro') {
-                el.textContent = 'Erro';
-                el.style.color = '#dc3545';
-            } else {
-                el.textContent = 'Parado';
-                el.style.color = '#dc3545';
-            }
-        }
-
-        function goToCurrentLocation() {
-            if (!navigator.geolocation) {
-                alert('Geolocalização não é suportada neste navegador.');
-                return;
-            }
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    currentLocation = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                    };
-
-                    updateLocationDisplay(position);
-                    userMarker.setLatLng([currentLocation.lat, currentLocation.lng]);
-                    map.setView([currentLocation.lat, currentLocation.lng], 16);
-
-                    if (isTracking) {
-                        if (pathCoordinates.length === 0) {
-                            pathCoordinates.push({ ...currentLocation });
-                        }
-                        if (!lastTrackedPoint) {
-                            lastTrackedPoint = { ...currentLocation };
-                        }
-                    }
-                },
-                (error) => {
-                    if (error.code === 1) {
-                        alert('Não foi possível acessar sua localização.\nAtive a permissão de localização para este site no navegador e tente novamente.');
-                    } else {
-                        alert('Erro ao obter localização deste aparelho.');
-                    }
-                    console.error('Erro getCurrentPosition:', error);
-                },
-                { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 }
-            );
-        }
-
-        function updateLocationDisplay(position) {
-            document.getElementById('latitude').textContent = position.coords.latitude.toFixed(6);
-            document.getElementById('longitude').textContent = position.coords.longitude.toFixed(6);
-            document.getElementById('accuracy').textContent = position.coords.accuracy.toFixed(0) + 'm';
-            document.getElementById('speed').textContent = position.coords.speed ? (position.coords.speed * 3.6).toFixed(1) + ' km/h' : '--';
-        }
-
-        function startTracking() {
-            if (isTracking) return;
-            isTracking = true;
-            currentTrackStartTime = new Date().toISOString();
-            pathCoordinates = [];
-            pathLatLngs = [];
-            lastTrackedPoint = currentLocation ? { ...currentLocation } : null;
-            setTrackingStatus('ativo');
-
-            if (currentLocation) {
-                pathCoordinates.push({ ...currentLocation });
-                pathLatLngs.push([currentLocation.lat, currentLocation.lng]);
-                updatePath();
-            }
-        }
-
-        function stopTracking() {
-            if (!isTracking) return;
-            isTracking = false;
-            setTrackingStatus('parado');
-            lastTrackedPoint = null;
-
-            if (pathLatLngs.length > 1) {
-                const distance = computePathDistance(pathLatLngs);
-                const track = {
-                    id: Date.now(),
-                    startedAt: currentTrackStartTime,
-                    endedAt: new Date().toISOString(),
-                    distanceMeters: distance,
-                    path: pathLatLngs
-                };
-                trackHistory.push(track);
-                if (trackHistory.length > 10) trackHistory.shift();
-                localStorage.setItem('trackHistory', JSON.stringify(trackHistory));
-                renderHistory();
-            }
-        }
-
-        function extendRouteAlongRoad(origin, dest) {
-            const url = `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${dest.lng},${dest.lat}?overview=full&geometries=geojson`;
-            fetch(url)
-                .then(r => r.json())
-                .then(data => {
-                    if (!data.routes || !data.routes.length) {
-                        console.warn('OSRM não retornou rota para segmento.');
-                        return;
-                    }
-                    const coords = data.routes[0].geometry.coordinates;
-                    const latlngs = coords.map(c => [c[1], c[0]]);
-                    if (pathLatLngs.length === 0) {
-                        pathLatLngs = latlngs;
-                    } else {
-                        pathLatLngs = pathLatLngs.concat(latlngs.slice(1));
-                    }
-                    updatePath();
-                })
-                .catch(err => {
-                    console.error('Erro OSRM no segmento:', err);
-                });
-        }
-
-        function calculateDistanceInMeters(loc1, loc2) {
-            const R = 6371000;
-            const lat1 = loc1.lat * Math.PI / 180;
-            const lat2 = loc2.lat * Math.PI / 180;
-            const dLat = (loc2.lat - loc1.lat) * Math.PI / 180;
-            const dLng = (loc2.lng - loc1.lng) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(lat1) * Math.cos(lat2) *
-                      Math.sin(dLng/2) * Math.sin(dLng/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c;
-        }
-
-        function computePathDistance(path) {
-            let d = 0;
-            for (let i = 1; i < path.length; i++) {
-                const a = { lat: path[i-1][0], lng: path[i-1][1] };
-                const b = { lat: path[i][0], lng: path[i][1] };
-                d += calculateDistanceInMeters(a, b);
-            }
-            return d;
-        }
-
-        function updatePath() {
-            if (pathLatLngs.length === 0) {
-                if (pathPolyline) {
-                    map.removeLayer(pathPolyline);
-                    pathPolyline = null;
-                }
-                return;
-            }
-            if (pathPolyline) {
-                pathPolyline.setLatLngs(pathLatLngs);
-            } else {
-                pathPolyline = L.polyline(pathLatLngs, {
-                    color: '#1f77d4',
-                    weight: 4,
-                    opacity: 0.9,
-                    smoothFactor: 1.0
-                }).addTo(map);
-            }
-        }
-
-        function clearPath() {
-            pathCoordinates = [];
-            pathLatLngs = [];
-            lastTrackedPoint = null;
-            if (pathPolyline) {
-                map.removeLayer(pathPolyline);
-                pathPolyline = null;
-            }
-            const msg = document.getElementById('searchMessage');
-            if (msg) {
-                msg.innerHTML = '<div class="info-msg">🗑 Trajeto apagado.</div>';
-            }
-        }
-
-        // ---- Histórico ----
-
-        function renderHistory() {
-            const list = document.getElementById('historyList');
-            list.innerHTML = '';
-            const sorted = [...trackHistory].sort((a,b) => b.id - a.id);
-            sorted.forEach((track, index) => {
-                const item = document.createElement('div');
-                item.className = 'history-item';
-                const start = formatDateTime(track.startedAt);
-                const distKm = (track.distanceMeters / 1000).toFixed(2);
-                item.innerHTML = `
-                    <div>
-                        <strong>Rastreamento ${sorted.length - index}</strong><br>
-                        <small>${start}</small><br>
-                        <small>Distância: ${distKm} km</small>
-                    </div>
-                    <div>
-                        <button class="favorite-button" onclick="viewHistory(${track.id})">Ver</button>
-                        <button class="remove-button" onclick="deleteHistory(${track.id})">Excluir</button>
-                    </div>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        function viewHistory(id) {
-            const track = trackHistory.find(t => t.id === id);
-            if (!track) return;
-            pathLatLngs = track.path;
-            updatePath();
-            if (pathPolyline) {
-                map.fitBounds(pathPolyline.getBounds());
-            }
-        }
-
-        function deleteHistory(id) {
-            const idx = trackHistory.findIndex(t => t.id === id);
-            if (idx === -1) return;
-            if (!confirm('Excluir este rastreamento do histórico?')) return;
-
-            trackHistory.splice(idx, 1);
-            if (trackHistory.length) {
-                localStorage.setItem('trackHistory', JSON.stringify(trackHistory));
-            } else {
-                localStorage.removeItem('trackHistory');
-            }
-            renderHistory();
-        }
-
-        function formatDateTime(iso) {
-            if (!iso) return '';
-            const d = new Date(iso);
-            return d.toLocaleString('pt-BR', { hour12: false });
-        }
-
-        // ---- Geocoding Google / busca ----
-
-        function googleGeocode(query) {
-            const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(query + ', Brasil')}&key=${GOOGLE_API_KEY}`;
-            return fetch(url).then(r => r.json());
-        }
-
-        document.getElementById('addressInput').addEventListener('input', function(e) {
-            const value = e.target.value.trim();
-            if (value.length < 3) {
-                document.getElementById('suggestions').classList.remove('show');
-                return;
-            }
-            clearTimeout(autocompleteTimeout);
-            autocompleteTimeout = setTimeout(() => {
-                fetchSuggestions(value);
-            }, 300);
-        });
-
-        function fetchSuggestions(query) {
-            googleGeocode(query)
-                .then(data => {
-                    const suggestionsDiv = document.getElementById('suggestions');
-                    suggestionsDiv.innerHTML = '';
-                    if (!data.results || data.results.length === 0) {
-                        suggestionsDiv.classList.remove('show');
-                        return;
-                    }
-                    data.results.slice(0, 8).forEach(result => {
-                        const item = document.createElement('div');
-                        item.className = 'suggestion-item';
-                        item.textContent = result.formatted_address;
-                        item.onclick = () => {
-                            document.getElementById('addressInput').value = result.formatted_address;
-                            suggestionsDiv.classList.remove('show');
-                            const lat = result.geometry.location.lat;
-                            const lng = result.geometry.location.lng;
-                            searchAddressFromCoords(lat, lng, result.formatted_address);
-                        };
-                        suggestionsDiv.appendChild(item);
-                    });
-                    suggestionsDiv.classList.add('show');
-                })
-                .catch(err => console.error('Erro Google Geocoding (sugestões):', err));
-        }
-
-        function clearSearch() {
-            document.getElementById('addressInput').value = '';
-            document.getElementById('searchMessage').innerHTML = '';
-            document.getElementById('suggestions').classList.remove('show');
-            document.getElementById('navigationSection').style.display = 'none';
-            clearMarkers();
-            clearRoute();
-            selectedSearchLocation = null;
-        }
-
-        function searchAddress() {
-            const address = document.getElementById('addressInput').value.trim();
-            const messageDiv = document.getElementById('searchMessage');
-            if (!address) {
-                messageDiv.innerHTML = '<div class="error-msg">⚠️ Digite um endereço!</div>';
-                return;
-            }
-            messageDiv.innerHTML = '<div class="success-msg">🔍 Buscando...</div>';
-
-            googleGeocode(address)
-                .then(data => {
-                    clearMarkers();
-                    clearRoute();
-                    if (!data.results || data.results.length === 0) {
-                        messageDiv.innerHTML = '<div class="error-msg">❌ Endereço não encontrado!</div>';
-                        return;
-                    }
-                    messageDiv.innerHTML = `<div class="success-msg">✅ ${data.results.length} resultado(s) encontrado(s)</div>`;
-                    document.getElementById('suggestions').classList.remove('show');
-
-                    data.results.slice(0, 5).forEach((result, index) => {
-                        const lat = result.geometry.location.lat;
-                        const lng = result.geometry.location.lng;
-                        const marker = L.marker([lat, lng], {
-                            icon: L.icon({
-                                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                                iconSize: [25, 41],
-                                iconAnchor: [12, 41],
-                                popupAnchor: [1, -34],
-                                shadowSize: [41, 41]
-                            })
-                        }).bindPopup(result.formatted_address).addTo(map);
-                        searchResultsMarkers.push(marker);
-                        if (index === 0) {
-                            map.setView([lat, lng], 17);
-                            selectedSearchLocation = { lat: lat, lng: lng, name: result.formatted_address };
-                            document.getElementById('navigationSection').style.display = 'block';
-                            document.getElementById('navigationInfo').textContent = `Destino: ${result.formatted_address}`;
-                        }
-                    });
-                })
-                .catch(err => {
-                    messageDiv.innerHTML = '<div class="error-msg">❌ Erro na busca (Google)</div>';
-                    console.error('Erro Google Geocoding (busca):', err);
-                });
-        }
-
-        function searchAddressFromCoords(lat, lng, display_name) {
-            clearMarkers();
-            clearRoute();
-            const messageDiv = document.getElementById('searchMessage');
-            messageDiv.innerHTML = `<div class="success-msg">✅ Endereço encontrado!</div>`;
-            const marker = L.marker([lat, lng], {
-                icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                })
-            }).bindPopup(display_name).addTo(map);
-            searchResultsMarkers.push(marker);
-            map.setView([lat, lng], 17);
-            selectedSearchLocation = { lat: lat, lng: lng, name: display_name };
-            document.getElementById('navigationSection').style.display = 'block';
-            document.getElementById('navigationInfo').textContent = `Destino: ${display_name}`;
-        }
-
-        // ---- Rotas OSRM para navegação ----
-
-        function drawRoute(origin, dest) {
-            clearRoute();
-            const url = `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${dest.lng},${dest.lat}?overview=full&geometries=geojson`;
-            fetch(url)
-                .then(r => r.json())
-                .then(data => {
-                    if (!data.routes || !data.routes.length) {
-                        alert('❌ Não foi possível traçar rota.');
-                        return;
-                    }
-                    const coords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                    routePolyline = L.polyline(coords, {
-                        color: '#ff00ff',
-                        weight: 4,
-                        opacity: 0.9
-                    }).addTo(map);
-                    map.fitBounds(routePolyline.getBounds());
-                })
-                .catch(err => {
-                    console.error(err);
-                    alert('❌ Erro ao traçar rota.');
-                });
-        }
-
-        function clearRoute() {
-            if (routePolyline) {
-                map.removeLayer(routePolyline);
-                routePolyline = null;
-            }
-        }
-
-        function navigateToSearched() {
-            if (!selectedSearchLocation) {
-                alert('❌ Nenhum endereço selecionado!');
-                return;
-            }
-            if (!currentLocation) {
-                alert('❌ Localização atual não disponível!');
-                return;
-            }
-            const distance = calculateDistanceInMeters(currentLocation, selectedSearchLocation);
-            alert(`🧭 Navegando para: ${selectedSearchLocation.name}\n📏 Distância (reta): ${distance.toFixed(0)} metros`);
-            drawRoute(currentLocation, selectedSearchLocation);
-        }
-
-        function cancelNavigation() {
-            document.getElementById('navigationSection').style.display = 'none';
-            clearMarkers();
-            clearRoute();
-            selectedSearchLocation = null;
-        }
-
-        // ---- Click no mapa ----
-
-        function handleMapClick(latlng) {
-            selectedMapClickLocation = { lat: latlng.lat, lng: latlng.lng };
-            if (mapClickMarker) {
-                map.removeLayer(mapClickMarker);
-            }
-            mapClickMarker = L.marker([latlng.lat, latlng.lng], {
-                icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-purple.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                })
-            }).addTo(map);
-            const messageDiv = document.getElementById('mapClickMessage');
-            messageDiv.innerHTML = `<div class="success-msg">✅ Local marcado! Lat: ${latlng.lat.toFixed(6)}, Lng: ${latlng.lng.toFixed(6)}</div>`;
-            document.getElementById('mapClickNavSection').style.display = 'block';
-            document.getElementById('mapClickInfo').textContent = `Local: ${latlng.lat.toFixed(6)}, ${latlng.lng.toFixed(6)}`;
-            mapClickMode = false;
-            document.getElementById('map').classList.remove('click-mode');
-            const btn = document.getElementById('mapClickBtn');
-            btn.textContent = '🖱️ Ativar Modo Click';
-        }
-
-        function toggleMapClick() {
-            mapClickMode = !mapClickMode;
-            const btn = document.getElementById('mapClickBtn');
-            const msgDiv = document.getElementById('mapClickMessage');
-            if (mapClickMode) {
-                btn.textContent = '🖱️ Modo Click Ativo';
-                msgDiv.innerHTML = '<div class="info-msg">Clique no mapa para marcar um local.</div>';
-                document.getElementById('map').classList.add('click-mode');
-            } else {
-                btn.textContent = '🖱️ Ativar Modo Click';
-                msgDiv.innerHTML = '';
-                document.getElementById('map').classList.remove('click-mode');
-            }
-        }
-
-        function navigateToMapClick() {
-            if (!selectedMapClickLocation) {
-                alert('❌ Nenhum local selecionado!');
-                return;
-            }
-            if (!currentLocation) {
-                alert('❌ Localização atual não disponível!');
-                return;
-            }
-            const distance = calculateDistanceInMeters(currentLocation, selectedMapClickLocation);
-            alert(`🧭 Navegando para: ${selectedMapClickLocation.lat.toFixed(6)}, ${selectedMapClickLocation.lng.toFixed(6)}\n📏 Distância (reta): ${distance.toFixed(0)} metros`);
-            drawRoute(currentLocation, selectedMapClickLocation);
-        }
-
-        function cancelMapClickNav() {
-            document.getElementById('mapClickNavSection').style.display = 'none';
-            if (mapClickMarker) {
-                map.removeLayer(mapClickMarker);
-                mapClickMarker = null;
-            }
-            selectedMapClickLocation = null;
-            document.getElementById('mapClickMessage').innerHTML = '';
-            clearRoute();
-        }
-
-        // ---- Exportar imagem do mapa ----
-
-        function exportImage() {
-            if (!map || typeof leafletImage !== 'function') {
-                alert('Função de exportação não disponível neste navegador.');
-                return;
-            }
-            leafletImage(map, function(err, canvas) {
-                if (err) {
-                    console.error('Erro ao gerar imagem:', err);
-                    alert('Erro ao gerar imagem do mapa.');
-                    return;
-                }
-                const link = document.createElement('a');
-                link.href = canvas.toDataURL('image/png');
-                link.download = 'trajeto_' + Date.now() + '.png';
-                link.click();
-            });
-        }
-
-        // ---- Exportar coordenadas do trajeto ----
-
-        function exportCSV() {
-            if (!pathLatLngs.length) {
-                alert('❌ Nenhum trajeto para exportar!');
-                return;
-            }
-            let csv = 'latitude,longitude\n';
-            pathLatLngs.forEach(([lat, lng]) => {
-                csv += `${lat},${lng}\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'trajeto_coordenadas_' + Date.now() + '.csv';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        // ---- Favoritos ----
-
-        function goToManualLocation() {
-            const lat = parseFloat(document.getElementById('manualLat').value);
-            const lng = parseFloat(document.getElementById('manualLng').value);
-            if (isNaN(lat) || isNaN(lng)) {
-                alert('❌ Digite coordenadas válidas!');
-                return;
-            }
-            map.setView([lat, lng], 17);
-            L.marker([lat, lng], {
-                icon: L.icon({
-                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-                    iconSize: [25, 41],
-                    iconAnchor: [12, 41],
-                    popupAnchor: [1, -34],
-                    shadowSize: [41, 41]
-                })
-            }).addTo(map);
-            alert('✅ Local encontrado!');
-        }
-
-        function addFavorite() {
-            const base =
-                selectedSearchLocation ||
-                selectedMapClickLocation ||
-                currentLocation;
-
-            if (!base) {
-                alert('❌ Selecione um local no mapa ou aguarde a localização atual.');
-                return;
-            }
-
-            const name = document.getElementById('favoriteName').value.trim();
-            if (!name) {
-                alert('❌ Digite um nome para o favorito!');
+<h2>Rastreamento Policial ao Vivo</h2>
+<div id="map"></div>
+<div id="controles">
+  <input type="text" id="busca" placeholder="Rua e número" autocomplete="off">
+  <div id="suggestions"></div>
+  <button class="btn" id="btnBuscar">Buscar</button>
+  <button class="btn" id="btnLimparBusca">Limpar Busca</button>
+  <button class="btn" id="btnAtual">Ir para Localização Atual</button>
+  <button class="btn" id="btnIniciar">Iniciar</button>
+  <button class="btn" id="btnParar">Parar</button>
+  <button class="btn" id="btnExportarImg">Exportar Imagem</button>
+  <button class="btn" id="btnExportarCSV">Exportar Coordenadas</button>
+  <span id="status"></span>
+</div>
+<div id="favoritos"><h3>Favoritos:</h3></div>
+<div id="historico"><h3>Histórico:</h3></div>
+
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet-image@0.4.0/leaflet-image.js"></script>
+<script>
+let map = L.map('map').setView([-30.033, -51.220], 17);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+let marcadorAtual, marcadorBusca, polyline, isTracking = false, watchId = null, pathLatLngs = [];
+
+// Função para localização inicial automática
+function atualizarLocalizacao() {
+  navigator.geolocation.getCurrentPosition(pos => {
+    let latlng = [pos.coords.latitude, pos.coords.longitude];
+    if (!marcadorAtual) {
+      marcadorAtual = L.marker(latlng, {title:"Você"}).addTo(map);
+    } else {
+      marcadorAtual.setLatLng(latlng);
+    }
+    map.setView(latlng,18);
+    document.getElementById('status').innerText = "Localização pronta";
+  }, () => { document.getElementById('status').innerText = "Falha ao obter localização"; }, {
+    enableHighAccuracy: true, maximumAge: 0
+  });
+}
+atualizarLocalizacao();
+
+// Rastreamento ao vivo
+function iniciarRastreamento() {
+  if (isTracking) return;
+  isTracking = true;
+  pathLatLngs = [];
+  if (polyline) map.removeLayer(polyline);
+  document.getElementById('status').innerText = "Rastreamento: Ativo";
+  watchId = navigator.geolocation.watchPosition(pos => {
+    let latlng = [pos.coords.latitude, pos.coords.longitude];
+    if (!marcadorAtual) {
+      marcadorAtual = L.marker(latlng, {title:"Você"}).addTo(map);
+    } else {
+      marcadorAtual.setLatLng(latlng);
+    }
+    pathLatLngs.push(latlng);
+    if (polyline) polyline.addLatLng(latlng);
+    else polyline = L.polyline([latlng], {color: 'blue'}).addTo(map);
+  }, () => {
+    document.getElementById('status').innerText = "Erro no rastreamento";
+  }, {enableHighAccuracy:true, maximumAge:0, timeout:5000});
+}
+
+function pararRastreamento() {
+  if (!isTracking) return;
+  isTracking = false;
+  navigator.geolocation.clearWatch(watchId);
+  document.getElementById('status').innerText = "Rastreamento: Parado";
+  // Salva histórico (simples): array de trajetos
+  let historico = JSON.parse(localStorage.getItem('historicoTrajetos') || '[]');
+  historico.push(polyline.getLatLngs());
+  localStorage.setItem('historicoTrajetos', JSON.stringify(historico));
+  desenharHistorico();
+}
+
+// Histórico: desenha e exclui individualmente
+function desenharHistorico() {
+  let histDiv = document.getElementById('historico');
+  histDiv.innerHTML = "<h3>Histórico:</h3>";
+  let historico = JSON.parse(localStorage.getItem('historicoTrajetos')||'[]');
+  historico.forEach((traj, i) => {
+    let el = document.createElement('div');
+    el.innerHTML = `Trajeto #${i+1} <button onclick="verTrajeto(${i})">Ver</button> <button onclick="deletarTrajeto(${i})">Excluir</button>`;
+    histDiv.appendChild(el);
+  });
+}
+window.verTrajeto = function(i) {
+  let historico = JSON.parse(localStorage.getItem('historicoTrajetos')||'[]');
+  if (polyline) map.removeLayer(polyline);
+  polyline = L.polyline(historico[i], {color:'green'}).addTo(map);
+}
+window.deletarTrajeto = function(i) {
+  let historico = JSON.parse(localStorage.getItem('historicoTrajetos')||'[]');
+  historico.splice(i,1);
+  localStorage.setItem('historicoTrajetos', JSON.stringify(historico));
+  desenharHistorico();
+}
+
+// Exportar imagem do mapa
+document.getElementById('btnExportarImg').onclick = function(){
+  leafletImage(map, function(img) {
+    let link = document.createElement('a');
+    link.href = img.toDataURL();
+    link.download = "trajeto.png";
+    link.click();
+  });
+};
+// Exportar coordenadas CSV
+document.getElementById('btnExportarCSV').onclick = function(){
+  let coords = polyline ? polyline.getLatLngs() : [];
+  let csv = 'lat,lng\n'+coords.map(p=>`${p.lat},${p.lng}`).join('\n');
+  let blob = new Blob([csv],{type:'text/csv'});
+  let a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = "trajeto.csv";
+  a.click();
+};
+
+// Favoritos: salvar, mostrar, ir
+let favoritos = JSON.parse(localStorage.getItem('favoritosMap')||'[]');
+function desenharFavoritos() {
+  let favDiv = document.getElementById('favoritos');
+  favDiv.innerHTML = "<h3>Favoritos:</h3>";
+  favoritos.forEach((fav, i) => {
+    let el = document.createElement('div');
+    el.innerHTML = `${fav.nome} <button onclick="navegarFavorito(${i})">Ir</button> <button onclick="removerFavorito(${i})">Excluir</button>`;
+    favDiv.appendChild(el);
+    L.marker([fav.lat,fav.lng],{title:"Favorito"}).addTo(map);
+  });
+}
+window.navegarFavorito = function(i){
+  let fav = favoritos[i];
+  map.setView([fav.lat,fav.lng],18);
+  // Traçar rota atual->favorito (simples, retas)
+  if (marcadorAtual) {
+    if (polyline) map.removeLayer(polyline);
+    polyline = L.polyline([marcadorAtual.getLatLng(),[fav.lat,fav.lng]],{color:'red'}).addTo(map);
+  }
+}
+window.removerFavorito = function(i){
+  favoritos.splice(i,1); localStorage.setItem('favoritosMap',JSON.stringify(favoritos)); desenharFavoritos();
+}
+
+// Buscar endereço + autocomplete
+document.getElementById('busca').addEventListener('input',function(e){
+  let query = e.target.value;
+  if (query.length<3) return;
+  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+    .then(r=>r.json()).then(res=>{
+      let sugDiv = document.getElementById('suggestions');
+      sugDiv.innerHTML = '';
+      res.slice(0,5).forEach(s=>{
+        let el = document.createElement('div');
+        el.innerText = s.display_name;
+        el.onclick = ()=>{e.target.value=s.display_name; sugDiv.innerHTML = ''; };
+        sugDiv.appendChild(el);
+      });
+    });
+});
+document.getElementById('btnBuscar').onclick = function(){
+  let query = document.getElementById('busca').value;
+  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
+    .then(r=>r.json()).then(res=>{
+      if(res.length>0){
+        let s = res[0];
+        let latlng = [parseFloat(s.lat), parseFloat(s.lon)];
+        if(marcadorBusca) map.removeLayer(marcadorBusca);
+        marcadorBusca = L.marker(latlng,{title:"Busca"}).addTo(map);
+        map.setView(latlng,18);
+        favoritos.push({nome:s.display_name,lat:latlng[0],lng:latlng[1]});
+        localStorage.setItem('favoritosMap',JSON.stringify(favoritos));
+        desenharFavoritos();
+      } else {
+        document.getElementById('status').innerText = "Endereço não encontrado";
+      }
+    });
+};
+document.getElementById('btnLimparBusca').onclick = function(){
+  document.getElementById('busca').value='';
+  document.getElementById('suggestions').innerHTML = '';
+  if(marcadorBusca) map.removeLayer(marcadorBusca);
+};
+document.getElementById('btnAtual').onclick = atualizarLocalizacao;
+document.getElementById('btnIniciar').onclick = function(){
+  if (confirm("Ativar rastreamento ao vivo e compartilhar localização?")) iniciarRastreamento();
+};
+document.getElementById('btnParar').onclick = pararRastreamento;
+
+desenharHistorico();
+desenharFavoritos();
+
+</script>
+</body>
+</html>
