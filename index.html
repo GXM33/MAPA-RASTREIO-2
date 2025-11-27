@@ -1,208 +1,503 @@
 <!DOCTYPE html>
-<html lang="pt">
+<html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Trajeto ao Vivo - Policial</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <style>
-    #map { height: 65vh; width: 100%; }
-    .btn { margin: 4px; }
-    #controles, #historico, #favoritos { margin: 10px 0; }
-    #status { font-weight: bold; margin-left: 8px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rastreador de Rota (sem chave na URL)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+
+        .sidebar {
+            width: 350px;
+            background-color: white;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h2 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #555;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .search-container input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .search-container button {
+            position: absolute;
+            right: 5px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 5px;
+        }
+
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-top: none;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .suggestions.active {
+            display: block;
+        }
+
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            font-size: 13px;
+        }
+
+        .suggestion-item:hover {
+            background-color: #f0f0f0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: background-color 0.3s;
+            min-width: 100px;
+        }
+
+        #btnCurrentLocation {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        #btnCurrentLocation:hover {
+            background-color: #45a049;
+        }
+
+        #btnClearSearch {
+            background-color: #f44336;
+            color: white;
+        }
+
+        #btnClearSearch:hover {
+            background-color: #da190b;
+        }
+
+        #btnNavigate {
+            background-color: #2196F3;
+            color: white;
+            flex: 1;
+        }
+
+        #btnNavigate:hover {
+            background-color: #0b7dda;
+        }
+
+        #btnClearRoute {
+            background-color: #ff9800;
+            color: white;
+        }
+
+        #btnClearRoute:hover {
+            background-color: #e68900;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            display: none;
+        }
+
+        .status.active {
+            display: block;
+        }
+
+        .status.tracking {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        #map {
+            flex: 1;
+            background-color: #e0e0e0;
+        }
+
+        .current-date {
+            background-color: #e3f2fd;
+            color: #1565c0;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 13px;
+            border: 1px solid #bbdefb;
+        }
+
+        .destination-select {
+            margin-bottom: 15px;
+        }
+
+        .destination-select select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-<h2>Rastreamento Policial ao Vivo</h2>
-<div id="map"></div>
-<div id="controles">
-  <input type="text" id="busca" placeholder="Rua e número" autocomplete="off">
-  <div id="suggestions"></div>
-  <button class="btn" id="btnBuscar">Buscar</button>
-  <button class="btn" id="btnLimparBusca">Limpar Busca</button>
-  <button class="btn" id="btnAtual">Ir para Localização Atual</button>
-  <button class="btn" id="btnIniciar">Iniciar</button>
-  <button class="btn" id="btnParar">Parar</button>
-  <button class="btn" id="btnExportarImg">Exportar Imagem</button>
-  <button class="btn" id="btnExportarCSV">Exportar Coordenadas</button>
-  <span id="status"></span>
-</div>
-<div id="favoritos"><h3>Favoritos:</h3></div>
-<div id="historico"><h3>Histórico:</h3></div>
+    <div class="container">
+        <div class="sidebar">
+            <h2>🗺️ Rastreador</h2>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script src="https://unpkg.com/leaflet-image@0.4.0/leaflet-image.js"></script>
-<script>
-let map = L.map('map').setView([-30.033, -51.220], 17);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
-let marcadorAtual, marcadorBusca, polyline, isTracking = false, watchId = null, pathLatLngs = [];
+            <div class="current-date">
+                <strong>Data:</strong> <span id="currentDate"></span>
+            </div>
 
-// Função para localização inicial automática
-function atualizarLocalizacao() {
-  navigator.geolocation.getCurrentPosition(pos => {
-    let latlng = [pos.coords.latitude, pos.coords.longitude];
-    if (!marcadorAtual) {
-      marcadorAtual = L.marker(latlng, {title:"Você"}).addTo(map);
-    } else {
-      marcadorAtual.setLatLng(latlng);
-    }
-    map.setView(latlng,18);
-    document.getElementById('status').innerText = "Localização pronta";
-  }, () => { document.getElementById('status').innerText = "Falha ao obter localização"; }, {
-    enableHighAccuracy: true, maximumAge: 0
-  });
-}
-atualizarLocalizacao();
+            <div class="status tracking" id="statusTracking">
+                <strong>🔴 Rastreamento:</strong> Iniciado
+            </div>
 
-// Rastreamento ao vivo
-function iniciarRastreamento() {
-  if (isTracking) return;
-  isTracking = true;
-  pathLatLngs = [];
-  if (polyline) map.removeLayer(polyline);
-  document.getElementById('status').innerText = "Rastreamento: Ativo";
-  watchId = navigator.geolocation.watchPosition(pos => {
-    let latlng = [pos.coords.latitude, pos.coords.longitude];
-    if (!marcadorAtual) {
-      marcadorAtual = L.marker(latlng, {title:"Você"}).addTo(map);
-    } else {
-      marcadorAtual.setLatLng(latlng);
-    }
-    pathLatLngs.push(latlng);
-    if (polyline) polyline.addLatLng(latlng);
-    else polyline = L.polyline([latlng], {color: 'blue'}).addTo(map);
-  }, () => {
-    document.getElementById('status').innerText = "Erro no rastreamento";
-  }, {enableHighAccuracy:true, maximumAge:0, timeout:5000});
-}
+            <div class="form-group">
+                <label for="startAddress">📍 Endereço de Partida</label>
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="startAddress" 
+                        placeholder="Digite endereço"
+                    >
+                    <button id="btnCurrentLocation" title="Usar localização atual">📍</button>
+                    <div class="suggestions" id="startSuggestions"></div>
+                </div>
+            </div>
 
-function pararRastreamento() {
-  if (!isTracking) return;
-  isTracking = false;
-  navigator.geolocation.clearWatch(watchId);
-  document.getElementById('status').innerText = "Rastreamento: Parado";
-  // Salva histórico (simples): array de trajetos
-  let historico = JSON.parse(localStorage.getItem('historicoTrajetos') || '[]');
-  historico.push(polyline.getLatLngs());
-  localStorage.setItem('historicoTrajetos', JSON.stringify(historico));
-  desenharHistorico();
-}
+            <div class="form-group">
+                <label for="startNumber">Nº</label>
+                <input 
+                    type="text" 
+                    id="startNumber" 
+                    placeholder="Número"
+                    maxlength="10"
+                >
+            </div>
 
-// Histórico: desenha e exclui individualmente
-function desenharHistorico() {
-  let histDiv = document.getElementById('historico');
-  histDiv.innerHTML = "<h3>Histórico:</h3>";
-  let historico = JSON.parse(localStorage.getItem('historicoTrajetos')||'[]');
-  historico.forEach((traj, i) => {
-    let el = document.createElement('div');
-    el.innerHTML = `Trajeto #${i+1} <button onclick="verTrajeto(${i})">Ver</button> <button onclick="deletarTrajeto(${i})">Excluir</button>`;
-    histDiv.appendChild(el);
-  });
-}
-window.verTrajeto = function(i) {
-  let historico = JSON.parse(localStorage.getItem('historicoTrajetos')||'[]');
-  if (polyline) map.removeLayer(polyline);
-  polyline = L.polyline(historico[i], {color:'green'}).addTo(map);
-}
-window.deletarTrajeto = function(i) {
-  let historico = JSON.parse(localStorage.getItem('historicoTrajetos')||'[]');
-  historico.splice(i,1);
-  localStorage.setItem('historicoTrajetos', JSON.stringify(historico));
-  desenharHistorico();
-}
+            <div class="form-group">
+                <label for="destinationAddress">🎯 Endereço de Destino</label>
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        id="destinationAddress" 
+                        placeholder="Digite endereço"
+                    >
+                    <button id="btnClearSearch" title="Limpar busca">✕</button>
+                    <div class="suggestions" id="destinationSuggestions"></div>
+                </div>
+            </div>
 
-// Exportar imagem do mapa
-document.getElementById('btnExportarImg').onclick = function(){
-  leafletImage(map, function(img) {
-    let link = document.createElement('a');
-    link.href = img.toDataURL();
-    link.download = "trajeto.png";
-    link.click();
-  });
-};
-// Exportar coordenadas CSV
-document.getElementById('btnExportarCSV').onclick = function(){
-  let coords = polyline ? polyline.getLatLngs() : [];
-  let csv = 'lat,lng\n'+coords.map(p=>`${p.lat},${p.lng}`).join('\n');
-  let blob = new Blob([csv],{type:'text/csv'});
-  let a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = "trajeto.csv";
-  a.click();
-};
+            <div class="form-group">
+                <label for="destinationNumber">Nº</label>
+                <input 
+                    type="text" 
+                    id="destinationNumber" 
+                    placeholder="Número"
+                    maxlength="10"
+                >
+            </div>
 
-// Favoritos: salvar, mostrar, ir
-let favoritos = JSON.parse(localStorage.getItem('favoritosMap')||'[]');
-function desenharFavoritos() {
-  let favDiv = document.getElementById('favoritos');
-  favDiv.innerHTML = "<h3>Favoritos:</h3>";
-  favoritos.forEach((fav, i) => {
-    let el = document.createElement('div');
-    el.innerHTML = `${fav.nome} <button onclick="navegarFavorito(${i})">Ir</button> <button onclick="removerFavorito(${i})">Excluir</button>`;
-    favDiv.appendChild(el);
-    L.marker([fav.lat,fav.lng],{title:"Favorito"}).addTo(map);
-  });
-}
-window.navegarFavorito = function(i){
-  let fav = favoritos[i];
-  map.setView([fav.lat,fav.lng],18);
-  // Traçar rota atual->favorito (simples, retas)
-  if (marcadorAtual) {
-    if (polyline) map.removeLayer(polyline);
-    polyline = L.polyline([marcadorAtual.getLatLng(),[fav.lat,fav.lng]],{color:'red'}).addTo(map);
-  }
-}
-window.removerFavorito = function(i){
-  favoritos.splice(i,1); localStorage.setItem('favoritosMap',JSON.stringify(favoritos)); desenharFavoritos();
-}
+            <div class="destination-select" id="destinationSelectContainer" style="display: none;">
+                <label for="destinationSelect">Selecione um destino:</label>
+                <select id="destinationSelect">
+                    <option value="">-- Escolha --</option>
+                </select>
+            </div>
 
-// Buscar endereço + autocomplete
-document.getElementById('busca').addEventListener('input',function(e){
-  let query = e.target.value;
-  if (query.length<3) return;
-  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
-    .then(r=>r.json()).then(res=>{
-      let sugDiv = document.getElementById('suggestions');
-      sugDiv.innerHTML = '';
-      res.slice(0,5).forEach(s=>{
-        let el = document.createElement('div');
-        el.innerText = s.display_name;
-        el.onclick = ()=>{e.target.value=s.display_name; sugDiv.innerHTML = ''; };
-        sugDiv.appendChild(el);
-      });
-    });
-});
-document.getElementById('btnBuscar').onclick = function(){
-  let query = document.getElementById('busca').value;
-  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`)
-    .then(r=>r.json()).then(res=>{
-      if(res.length>0){
-        let s = res[0];
-        let latlng = [parseFloat(s.lat), parseFloat(s.lon)];
-        if(marcadorBusca) map.removeLayer(marcadorBusca);
-        marcadorBusca = L.marker(latlng,{title:"Busca"}).addTo(map);
-        map.setView(latlng,18);
-        favoritos.push({nome:s.display_name,lat:latlng[0],lng:latlng[1]});
-        localStorage.setItem('favoritosMap',JSON.stringify(favoritos));
-        desenharFavoritos();
-      } else {
-        document.getElementById('status').innerText = "Endereço não encontrado";
-      }
-    });
-};
-document.getElementById('btnLimparBusca').onclick = function(){
-  document.getElementById('busca').value='';
-  document.getElementById('suggestions').innerHTML = '';
-  if(marcadorBusca) map.removeLayer(marcadorBusca);
-};
-document.getElementById('btnAtual').onclick = atualizarLocalizacao;
-document.getElementById('btnIniciar').onclick = function(){
-  if (confirm("Ativar rastreamento ao vivo e compartilhar localização?")) iniciarRastreamento();
-};
-document.getElementById('btnParar').onclick = pararRastreamento;
+            <div class="button-group">
+                <button id="btnNavigate">Navegar</button>
+            </div>
 
-desenharHistorico();
-desenharFavoritos();
+            <div class="button-group">
+                <button id="btnClearRoute">Limpar Rota</button>
+            </div>
 
-</script>
+            <div class="status info" id="statusInfo"></div>
+        </div>
+
+        <div id="map"></div>
+    </div>
+
+    <!--
+      IMPORTANTE:
+      Seu sistema está "sem chave API".
+      Se em algum outro arquivo você já carrega o Google Maps (por exemplo, via bundler),
+      não precisa desta tag.
+      Se for testar este HTML isolado, precisará incluir a biblioteca de alguma forma.
+    -->
+    <!-- Exemplo COM chave (não será usado no seu caso):
+    <script src="https://maps.googleapis.com/maps/api/js?key=SUA_CHAVE_AQUI&libraries=places"></script>
+    -->
+
+    <!-- Exemplo SEM chave explícita na URL (vai dar erro nas contas Google novas, mas mantém seu HTML sem key): -->
+    <script src="https://maps.googleapis.com/maps/api/js?libraries=places"></script>
+
+    <script>
+        let map;
+        let directionsService;
+        let directionsRenderer;
+        let startMarker;
+        let endMarker;
+        let currentLocation;
+
+        // Atualiza data/hora em horário de Brasília
+        function updateCurrentDate() {
+            const now = new Date();
+            const formatter = new Intl.DateTimeFormat('pt-BR', {
+                timeZone: 'America/Sao_Paulo',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('currentDate').textContent = formatter.format(now);
+        }
+
+        updateCurrentDate();
+        setInterval(updateCurrentDate, 1000);
+
+        // Inicializar mapa / rota
+        function initMap() {
+            const initialCenter = { lat: -30.0346, lng: -51.2177 }; // Porto Alegre
+
+            map = new google.maps.Map(document.getElementById('map'), {
+                center: initialCenter,
+                zoom: 14,
+                mapTypeControl: true,
+                fullscreenControl: true,
+                zoomControl: true,
+                streetViewControl: true
+            });
+
+            directionsService = new google.maps.DirectionsService();
+            directionsRenderer = new google.maps.DirectionsRenderer({
+                map: map,
+                suppressMarkers: false,
+                polylineOptions: {
+                    strokeColor: '#2196F3',
+                    strokeWeight: 5,
+                    strokeOpacity: 0.8
+                }
+            });
+
+            // Tenta pegar localização atual
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        currentLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        map.setCenter(currentLocation);
+                        if (!startMarker) {
+                            startMarker = new google.maps.Marker({
+                                map,
+                                position: currentLocation,
+                                title: 'Sua localização atual'
+                            });
+                        }
+                    },
+                    (error) => {
+                        console.log('Erro ao obter localização:', error);
+                        showInfo('❌ Erro ao obter localização atual');
+                    }
+                );
+            }
+        }
+
+        // Mostrar mensagem de status
+        function showInfo(msg) {
+            const el = document.getElementById('statusInfo');
+            el.textContent = msg;
+            el.classList.add('active');
+            setTimeout(() => el.classList.remove('active'), 3000);
+        }
+
+        // Limpar rota (BOTÃO NOVO)
+        function clearRoute() {
+            if (directionsRenderer) {
+                directionsRenderer.setDirections({ routes: [] });
+            }
+
+            if (startMarker) {
+                startMarker.setMap(null);
+                startMarker = null;
+            }
+
+            if (endMarker) {
+                endMarker.setMap(null);
+                endMarker = null;
+            }
+
+            showInfo('✓ Rota removida do mapa');
+        }
+
+        // Usar localização atual como partida
+        function useCurrentLocation() {
+            if (currentLocation) {
+                map.setCenter(currentLocation);
+                if (startMarker) startMarker.setMap(null);
+                startMarker = new google.maps.Marker({
+                    map,
+                    position: currentLocation,
+                    title: 'Partida (localização atual)'
+                });
+                document.getElementById('startAddress').value = 'Localização atual';
+                document.getElementById('startNumber').value = '';
+            } else {
+                showInfo('❌ Localização atual indisponível');
+            }
+        }
+
+        // Limpar campos de busca de destino
+        function clearSearch() {
+            document.getElementById('destinationAddress').value = '';
+            document.getElementById('destinationNumber').value = '';
+        }
+
+        // Navegar (traçar rota simples usando texto)
+        function navigate() {
+            const startAddress = document.getElementById('startAddress').value.trim();
+            const startNumber = document.getElementById('startNumber').value.trim();
+            const destAddress = document.getElementById('destinationAddress').value.trim();
+            const destNumber = document.getElementById('destinationNumber').value.trim();
+
+            if (!startAddress || !destAddress) {
+                showInfo('❌ Preencha endereço de partida e destino');
+                return;
+            }
+
+            const startFull = startNumber
+                ? `${startAddress} ${startNumber}, Porto Alegre, RS, Brasil`
+                : `${startAddress}, Porto Alegre, RS, Brasil`;
+
+            const destFull = destNumber
+                ? `${destAddress} ${destNumber}, Porto Alegre, RS, Brasil`
+                : `${destAddress}, Porto Alegre, RS, Brasil`;
+
+            directionsService.route(
+                {
+                    origin: startFull,
+                    destination: destFull,
+                    travelMode: google.maps.TravelMode.DRIVING
+                },
+                (response, status) => {
+                    if (status === google.maps.DirectionsStatus.OK) {
+                        directionsRenderer.setDirections(response);
+                        showInfo('✓ Rota calculada com sucesso');
+
+                        // Ajusta marcadores
+                        const leg = response.routes[0].legs[0];
+
+                        if (startMarker) startMarker.setMap(null);
+                        if (endMarker) endMarker.setMap(null);
+
+                        startMarker = new google.maps.Marker({
+                            map,
+                            position: leg.start_location,
+                            title: 'Partida'
+                        });
+
+                        endMarker = new google.maps.Marker({
+                            map,
+                            position: leg.end_location,
+                            title: 'Destino'
+                        });
+                    } else {
+                        showInfo('❌ Erro ao calcular rota: ' + status);
+                    }
+                }
+            );
+        }
+
+        // Eventos
+        document.getElementById('btnCurrentLocation').addEventListener('click', useCurrentLocation);
+        document.getElementById('btnClearSearch').addEventListener('click', clearSearch);
+        document.getElementById('btnNavigate').addEventListener('click', navigate);
+        document.getElementById('btnClearRoute').addEventListener('click', clearRoute);
+
+        // Inicializa mapa ao carregar a página
+        window.addEventListener('load', () => {
+            if (window.google && google.maps) {
+                initMap();
+            } else {
+                showInfo('❌ Biblioteca Google Maps não carregada');
+            }
+        });
+    </script>
 </body>
 </html>
