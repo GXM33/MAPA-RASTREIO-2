@@ -303,6 +303,99 @@
       color: #1e3c72;
     }
 
+    /* Rota Atual em Progresso */
+    .current-route-section {
+      margin-bottom: 15px;
+      border-bottom: 2px solid #e0e0e0;
+      padding-bottom: 10px;
+    }
+
+    .current-route-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      color: #1e3c72;
+    }
+
+    .current-route-container {
+      background: #d4edda;
+      border: 1px solid #34c759;
+      border-radius: 6px;
+      padding: 10px;
+      display: block;
+    }
+
+    .current-route-container.hidden {
+      display: none;
+    }
+
+    .current-route-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .current-route-meta {
+      font-size: 12px;
+      color: #0b5e27;
+    }
+
+    .current-route-distance,
+    .current-route-time,
+    .current-route-points {
+      line-height: 1.6;
+    }
+
+    .current-route-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .btn-current-view {
+      background: #00d084;
+      color: white;
+      border: none;
+      padding: 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-current-view:hover {
+      background: #00a86b;
+      transform: scale(0.95);
+    }
+
+    .btn-current-delete {
+      background: #ff6b6b;
+      color: white;
+      border: none;
+      padding: 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-current-delete:hover {
+      background: #ee5a6f;
+      transform: scale(0.95);
+    }
+
+    .current-route-empty {
+      font-size: 12px;
+      color: #999;
+      text-align: center;
+      padding: 10px;
+      background: #f5f5f5;
+      border-radius: 6px;
+    }
+
     .history-section {
       margin-top: 15px;
       border-top: 2px solid #e0e0e0;
@@ -389,6 +482,8 @@
       color: #999;
       text-align: center;
       padding: 10px;
+      background: #f5f5f5;
+      border-radius: 6px;
     }
 
     @media (max-width: 768px) {
@@ -480,6 +575,27 @@
           <h3>Status GPS</h3>
           <p id="statusGPS">Desconectado</p>
         </div>
+
+        <!-- ROTA ATUAL EM PROGRESSO -->
+        <div class="current-route-section">
+          <div class="current-route-title">🚗 Rota Atual</div>
+          <div id="currentRouteContainer" class="current-route-container hidden">
+            <div class="current-route-info">
+              <div class="current-route-meta">
+                <div class="current-route-distance">📍 <span id="currentRouteDist">0</span> km</div>
+                <div class="current-route-time">⏱️ <span id="currentRouteTime">00:00</span></div>
+                <div class="current-route-points">📌 <span id="currentRoutePoints">0</span> pontos</div>
+              </div>
+              <div class="current-route-buttons">
+                <button class="btn-current-view" onclick="verRotaAtual()">👁 Ver</button>
+                <button class="btn-current-delete" onclick="excluirRotaAtual()">🗑 Excluir</button>
+              </div>
+            </div>
+          </div>
+          <div id="currentRouteEmpty" class="current-route-empty">Nenhuma rota em progresso</div>
+        </div>
+
+        <div class="divider"></div>
 
         <!-- HISTÓRICO DE ROTAS -->
         <div class="history-section">
@@ -680,7 +796,6 @@
       badge.className = "status-badge status-ativo";
       mostrarAlerta("Rastreamento iniciado. Traçado será ajustado às ruas reais.", "success");
 
-      // watchPosition SEM auto-recentralização do mapa
       watchId = navigator.geolocation.watchPosition(
         function (pos) {
           const { latitude, longitude, accuracy, speed } = pos.coords;
@@ -707,7 +822,6 @@
             }
           }
 
-          // Atualiza só o marcador; NÃO muda o centro do mapa
           userMarker.setLatLng([latitude, longitude]);
 
           atualizarPosicaoUI(latitude, longitude);
@@ -726,6 +840,7 @@
       );
 
       atualizarTempoRastreamento();
+      atualizarVisualizacaoRotaAtual();
     }
 
     function aplicarMapMatching() {
@@ -774,6 +889,7 @@
       }
 
       localStorage.removeItem(RASTREAMENTO_ATUAL_KEY);
+      atualizarVisualizacaoRotaAtual();
     }
 
     function aplicarMapMatchingFinal() {
@@ -805,6 +921,7 @@
       if (!rastreando || !inicioMs) return;
       const ms = Date.now() - inicioMs;
       document.getElementById("tempo").textContent = formatarTempo(ms);
+      atualizarVisualizacaoRotaAtual();
       requestAnimationFrame(atualizarTempoRastreamento);
     }
 
@@ -916,6 +1033,7 @@
 
       atualizarEstatisticasUI();
       localStorage.removeItem(RASTREAMENTO_ATUAL_KEY);
+      atualizarVisualizacaoRotaAtual();
       mostrarAlerta("Todas as linhas do mapa foram limpas.", "info");
     }
 
@@ -987,7 +1105,6 @@
               document.getElementById("statusBadge").className = "status-badge status-ativo";
 
               ativarWakeLock();
-              // Continua rastreamento SEM auto-recentralizar o mapa
               watchId = navigator.geolocation.watchPosition(
                 function (pos) {
                   const { latitude, longitude } = pos.coords;
@@ -1011,7 +1128,6 @@
                     }
                   }
 
-                  // Atualiza só o marcador; NÃO recentraliza
                   userMarker.setLatLng([latitude, longitude]);
                   atualizarPosicaoUI(latitude, longitude);
                   atualizarEstatisticasUI();
@@ -1022,6 +1138,7 @@
                 { enableHighAccuracy: true, timeout: 2000, maximumAge: 0 }
               );
               atualizarTempoRastreamento();
+              atualizarVisualizacaoRotaAtual();
             } else {
               localStorage.removeItem(RASTREAMENTO_ATUAL_KEY);
             }
@@ -1031,6 +1148,71 @@
         console.error("Erro ao verificar rastreamento interrompido:", e);
       }
     }
+
+    // ---------- ROTA ATUAL EM PROGRESSO ----------
+    function atualizarVisualizacaoRotaAtual() {
+      const container = document.getElementById("currentRouteContainer");
+      const empty = document.getElementById("currentRouteEmpty");
+
+      if (rastreando && pontos.length > 0) {
+        container.classList.remove("hidden");
+        empty.classList.add("hidden");
+
+        document.getElementById("currentRouteDist").textContent = (distanciaTotal / 1000).toFixed(3);
+        document.getElementById("currentRouteTime").textContent = formatarTempo(Date.now() - inicioMs);
+        document.getElementById("currentRoutePoints").textContent = pontos.length;
+      } else {
+        container.classList.add("hidden");
+        empty.classList.remove("hidden");
+      }
+    }
+
+    window.verRotaAtual = function () {
+      if (!pontos || pontos.length < 2) {
+        mostrarAlerta("Nenhuma rota em progresso para visualizar.", "error");
+        return;
+      }
+
+      if (historyPolyline) {
+        map.removeLayer(historyPolyline);
+      }
+
+      const latlngs = pontos.map((p) => [p.lat, p.lng]);
+      historyPolyline = L.polyline(latlngs, {
+        color: "#00d084",
+        weight: 5,
+        opacity: 0.95,
+      }).addTo(map);
+
+      const bounds = L.latLngBounds(latlngs);
+      map.fitBounds(bounds, { padding: [60, 60] });
+
+      mostrarAlerta("Exibindo rota em progresso", "success");
+    };
+
+    window.excluirRotaAtual = function () {
+      if (!confirm("Deseja realmente excluir a rota atual?")) return;
+
+      if (rastreando) {
+        mostrarAlerta("Pare o rastreamento antes de excluir a rota atual.", "error");
+        return;
+      }
+
+      pontos = [];
+      pontosBrutoGPS = [];
+      distanciaTotal = 0;
+      trajetoPolyline.setLatLngs([]);
+
+      if (historyPolyline) {
+        map.removeLayer(historyPolyline);
+        historyPolyline = null;
+      }
+
+      localStorage.removeItem(RASTREAMENTO_ATUAL_KEY);
+      atualizarEstatisticasUI();
+      atualizarVisualizacaoRotaAtual();
+      mostrarAlerta("Rota atual excluída.", "success");
+    };
 
     // ---------- HISTÓRICO DE ROTAS ----------
     function salvarRotaNoHistorico() {
