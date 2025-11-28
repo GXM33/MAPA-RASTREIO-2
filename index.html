@@ -81,50 +81,50 @@
         .sidebar-header {
             background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
             color: white;
-            padding: 15px;
+            padding: 20px;
             text-align: center;
             flex-shrink: 0;
         }
 
         .sidebar-header h1 {
-            font-size: 18px;
-            margin-bottom: 3px;
+            font-size: 20px;
+            margin-bottom: 5px;
         }
 
         .sidebar-header p {
-            font-size: 11px;
+            font-size: 12px;
             opacity: 0.9;
         }
 
         .sidebar-content {
             flex: 1;
-            padding: 15px;
+            padding: 20px;
             overflow-y: auto;
         }
 
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         .form-group label {
             display: block;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             color: #333;
             font-weight: 600;
-            font-size: 12px;
+            font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
         .form-group input {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 2px solid #e0e0e0;
             border-radius: 6px;
-            font-size: 13px;
+            font-size: 14px;
             transition: all 0.3s;
             font-family: inherit;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
         }
 
         .form-group input:focus {
@@ -137,7 +137,7 @@
             background: white;
             border: 1px solid #e0e0e0;
             border-radius: 6px;
-            max-height: 150px;
+            max-height: 200px;
             overflow-y: auto;
             display: none;
             z-index: 1000;
@@ -148,19 +148,23 @@
         }
 
         .search-result-item {
-            padding: 10px;
+            padding: 12px;
             border-bottom: 1px solid #f0f0f0;
-            font-size: 11px;
+            font-size: 12px;
             transition: all 0.2s;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             cursor: pointer;
         }
 
         .search-result-item:hover {
             background: #f0f0f0;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
         }
 
         .search-result-text {
@@ -170,23 +174,21 @@
         .search-result-text strong {
             display: block;
             color: #1e3c72;
-            margin-bottom: 2px;
-            font-size: 12px;
+            margin-bottom: 3px;
         }
 
         .search-result-text small {
             color: #666;
-            font-size: 11px;
         }
 
         .btn-rota {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 5px 10px;
+            padding: 6px 12px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
             white-space: nowrap;
             transition: all 0.2s;
@@ -201,8 +203,8 @@
         .button-group {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 15px;
+            gap: 10px;
+            margin-bottom: 20px;
         }
 
         .button-group.full {
@@ -210,10 +212,10 @@
         }
 
         .btn {
-            padding: 8px 10px;
+            padding: 10px 12px;
             border: none;
             border-radius: 6px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
@@ -279,13 +281,13 @@
 
         .status-badge {
             display: inline-block;
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 20px;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 600;
             width: 100%;
             text-align: center;
-            margin-bottom: 12px;
+            margin-bottom: 15px;
         }
 
         .status-ativo {
@@ -306,27 +308,27 @@
         .divider {
             height: 1px;
             background: #e0e0e0;
-            margin: 12px 0;
+            margin: 20px 0;
         }
 
         .info-panel {
             background: #f8f9fa;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 10px;
-            border-left: 3px solid #00d4ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #00d4ff;
         }
 
         .info-panel h3 {
-            font-size: 10px;
+            font-size: 11px;
             color: #666;
             text-transform: uppercase;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             font-weight: 600;
         }
 
         .info-panel p {
-            font-size: 14px;
+            font-size: 16px;
             color: #1e3c72;
             font-weight: bold;
             word-break: break-word;
@@ -335,36 +337,36 @@
         .info-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 8px;
+            gap: 10px;
+            margin-bottom: 10px;
         }
 
         .stat-card {
             background: #f8f9fa;
-            padding: 10px;
+            padding: 12px;
             border-radius: 6px;
             border-left: 3px solid #667eea;
         }
 
         .stat-label {
-            font-size: 10px;
+            font-size: 11px;
             color: #666;
             text-transform: uppercase;
-            margin-bottom: 4px;
+            margin-bottom: 5px;
         }
 
         .stat-value {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             color: #1e3c72;
         }
 
         .precision-indicator {
-            font-size: 11px;
-            padding: 8px;
+            font-size: 12px;
+            padding: 10px;
             background: white;
             border-radius: 6px;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
             text-align: center;
             border: 2px solid #e0e0e0;
         }
@@ -388,11 +390,11 @@
         }
 
         .speed-indicator {
-            font-size: 11px;
-            padding: 6px;
+            font-size: 12px;
+            padding: 8px;
             background: white;
             border-radius: 4px;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
             text-align: center;
             border-left: 3px solid #667eea;
         }
@@ -402,11 +404,11 @@
         }
 
         .alert {
-            padding: 10px;
+            padding: 12px;
             border-radius: 6px;
-            margin-bottom: 12px;
-            font-size: 11px;
-            line-height: 1.4;
+            margin-bottom: 15px;
+            font-size: 12px;
+            line-height: 1.5;
             display: none;
         }
 
@@ -432,126 +434,139 @@
             color: #c92a2a;
         }
 
-        /* ===== HISTÓRICO =====*/
-        .historico-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #e0e0e0;
+        /* ===== HISTÓRICO DE ROTAS ===== */
+        .historico-section {
+            margin-top: 20px;
+            border-top: 2px solid #e0e0e0;
+            padding-top: 15px;
         }
 
         .historico-title {
-            font-size: 12px;
+            font-size: 13px;
             color: #333;
-            font-weight: 700;
+            font-weight: 600;
             text-transform: uppercase;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .historico-count {
             background: #667eea;
             color: white;
-            padding: 3px 10px;
+            padding: 2px 8px;
             border-radius: 12px;
-            font-size: 10px;
-            font-weight: 600;
+            font-size: 11px;
         }
 
         .historico-list {
-            max-height: 150px;
+            max-height: 200px;
             overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
         }
 
         .historico-item {
             background: #f8f9fa;
             border: 1px solid #e0e0e0;
             border-radius: 6px;
-            padding: 8px;
-            font-size: 11px;
+            padding: 10px;
+            margin-bottom: 8px;
+            font-size: 12px;
         }
 
         .historico-item-info {
-            margin-bottom: 6px;
-            line-height: 1.3;
+            display: grid;
+            gap: 5px;
+            margin-bottom: 8px;
         }
 
         .historico-item-data {
             color: #666;
-            font-size: 10px;
+            font-size: 11px;
         }
 
         .historico-item-distancia {
             color: #1e3c72;
             font-weight: bold;
-            font-size: 12px;
         }
 
         .historico-item-tempo {
             color: #667eea;
-            font-size: 10px;
+            font-size: 11px;
         }
 
         .historico-item-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 5px;
+            gap: 6px;
         }
 
         .btn-view {
             background: #667eea;
             color: white;
             border: none;
-            padding: 5px;
+            padding: 6px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
             transition: all 0.2s;
         }
 
         .btn-view:hover {
             background: #764ba2;
+            transform: scale(0.95);
         }
 
         .btn-delete {
             background: #ff6b6b;
             color: white;
             border: none;
-            padding: 5px;
+            padding: 6px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 600;
             transition: all 0.2s;
         }
 
         .btn-delete:hover {
             background: #ee5a6f;
+            transform: scale(0.95);
         }
 
         .historico-vazio {
             text-align: center;
             color: #999;
-            font-size: 11px;
-            padding: 15px;
+            font-size: 12px;
+            padding: 20px;
             background: #f5f5f5;
             border-radius: 6px;
         }
 
         @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
             .sidebar {
                 width: 100%;
                 height: 50%;
                 border-left: none;
                 border-top: 1px solid #e0e0e0;
+                box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
             }
 
             .map-container {
                 height: 50%;
+            }
+
+            .button-group {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-iniciar {
+                grid-column: 1 / -1;
             }
         }
     </style>
@@ -567,8 +582,8 @@
         <!-- SIDEBAR -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h1>🚗 Rastreador</h1>
-                <p>Tempo Real</p>
+                <h1>🚗 Rastreador de Trajeto</h1>
+                <p>Navegação em Tempo Real</p>
             </div>
 
             <div class="sidebar-content">
@@ -578,26 +593,28 @@
                 <div id="alertaInfo" class="alert alert-warning"></div>
 
                 <!-- STATUS -->
-                <div id="statusBadge" class="status-badge status-aguardando">⏳ Aguardando GPS...</div>
+                <div id="statusBadge" class="status-badge status-aguardando">
+                    ⏳ Aguardando GPS...
+                </div>
 
                 <!-- BUSCAR ENDEREÇO -->
                 <div class="form-group">
                     <label>📍 Buscar Endereço</label>
-                    <input type="text" id="inputEndereço" placeholder="Ex: Rua das Flores">
+                    <input type="text" id="inputEndereço" placeholder="Ex: Rua das Flores, Porto Alegre">
                     <div id="searchResults" class="search-results"></div>
                 </div>
 
-                <!-- COORDENADAS -->
+                <!-- OU COORDENADAS -->
                 <div class="form-group">
-                    <label>📊 Coordenadas</label>
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+                    <label>📊 Ou use Coordenadas</label>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                         <input type="number" id="inputLatitude" placeholder="Lat" step="0.0001">
                         <input type="number" id="inputLongitude" placeholder="Lng" step="0.0001">
                     </div>
-                    <button class="btn btn-info" style="width: 100%; margin-top: 6px;" onclick="setarPorCoordenadas()">✓ Usar</button>
+                    <button class="btn btn-info" style="width: 100%; margin-top: 8px;" onclick="setarPorCoordenadas()">✓ Usar Coordenadas</button>
                 </div>
 
-                <!-- BOTÕES -->
+                <!-- BOTÕES PRINCIPAIS -->
                 <div class="button-group full">
                     <button class="btn btn-iniciar" id="btnIniciar" onclick="iniciarRastreamento()">▶ Iniciar</button>
                 </div>
@@ -608,7 +625,7 @@
                 </div>
 
                 <div class="button-group">
-                    <button class="btn btn-info" id="btnExportar" onclick="exportarDados()">📥 CSV</button>
+                    <button class="btn btn-info" id="btnExportar" onclick="exportarDados()">📥 Exportar</button>
                     <button class="btn btn-secondary" id="btnLimparDestino" onclick="limparDestino()">✕ Destino</button>
                 </div>
 
@@ -618,7 +635,7 @@
                 <div id="precisionIndicator" class="precision-indicator">📍 Precisão: --</div>
                 <div id="speedIndicator" class="speed-indicator hidden">🚗 Velocidade: 0 km/h</div>
 
-                <!-- INFO -->
+                <!-- LOCALIZAÇÃO -->
                 <div class="info-panel">
                     <h3>Latitude</h3>
                     <p id="latitude">--</p>
@@ -629,7 +646,9 @@
                     <p id="longitude">--</p>
                 </div>
 
-                <!-- STATS -->
+                <div class="divider"></div>
+
+                <!-- ESTATÍSTICAS -->
                 <div class="info-row">
                     <div class="stat-card">
                         <div class="stat-label">Distância</div>
@@ -642,38 +661,57 @@
                 </div>
 
                 <div class="info-panel">
-                    <h3>Pontos</h3>
+                    <h3>Pontos Registrados</h3>
                     <p id="pontos">0</p>
                 </div>
 
-                <!-- HISTÓRICO -->
-                <div class="divider"></div>
-                <div class="historico-header">
-                    <span class="historico-title">📋 Histórico</span>
-                    <span class="historico-count" id="historico-count">0</span>
+                <div class="info-panel">
+                    <h3>Status GPS</h3>
+                    <p id="statusGPS">Desconectado</p>
                 </div>
-                <div class="historico-list" id="historico-list">
-                    <div class="historico-vazio">Nenhuma rota</div>
+
+                <!-- ===== HISTÓRICO DE ROTAS ===== -->
+                <div class="historico-section">
+                    <div class="historico-title">
+                        📋 Histórico de Rotas
+                        <span class="historico-count" id="historico-count">0</span>
+                    </div>
+                    <div class="historico-list" id="historico-list">
+                        <div class="historico-vazio">Nenhuma rota registrada</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        let map, userMarker, trajetoPolyline, destinoMarker, rotaPolyline;
-        let rastreandoAtivo = false, pontosTrajeto = [], distanciaTotal = 0;
-        let tempoInicio = null, watchId = null, ultimaPosicao = null;
-        let destinoSelecionado = null, ultimaVelocidade = 0, pontos_capturados = 0;
+        // ============= VARIÁVEIS GLOBAIS =============
+        let map;
+        let userMarker;
+        let trajetoPolyline;
+        let destinoMarker;
+        let rotaPolyline;
+        let rastreandoAtivo = false;
+        let pontosTrajeto = [];
+        let distanciaTotal = 0;
+        let tempoInicio = null;
+        let watchId = null;
+        let ultimaPosicao = null;
+        let destinoSelecionado = null;
+        let ultimaVelocidade = 0;
+        let pontos_capturados = 0;
         let historico = [];
 
+        // ============= INICIALIZAÇÃO DO MAPA =============
         function inicializarMapa() {
             if (map) return;
 
             map = L.map('map').setView([-30.0326, -51.2093], 18);
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap',
-                maxZoom: 19
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19,
+                minZoom: 1
             }).addTo(map);
 
             trajetoPolyline = L.polyline([], {
@@ -688,6 +726,8 @@
                 color: '#667eea',
                 weight: 3,
                 opacity: 0.6,
+                lineCap: 'round',
+                lineJoin: 'round',
                 dashArray: '5, 5'
             }).addTo(map);
 
@@ -696,13 +736,14 @@
                 fillColor: '#00d084',
                 color: 'white',
                 weight: 3,
+                opacity: 1,
                 fillOpacity: 1,
                 zIndex: 1000
-            }).addTo(map);
+            }).addTo(map).bindPopup('Sua Posição');
 
             destinoMarker = L.marker([-30.0326, -51.2093], {
                 zIndex: 900
-            }).addTo(map);
+            }).addTo(map).bindPopup('Destino');
 
             destinoMarker.setLatLng([-999, -999]);
 
@@ -718,9 +759,12 @@
                 return;
             }
 
+            mostrarAlerta('Obtendo sua localização...', 'warning');
+
             navigator.geolocation.getCurrentPosition(
                 function(position) {
                     const { latitude, longitude, accuracy } = position.coords;
+                    
                     ultimaPosicao = { lat: latitude, lng: longitude };
                     
                     map.setView([latitude, longitude], 18);
@@ -728,14 +772,21 @@
                     
                     document.getElementById('latitude').textContent = latitude.toFixed(6);
                     document.getElementById('longitude').textContent = longitude.toFixed(6);
-                    document.getElementById('statusBadge').textContent = '🟡 Pronto';
+                    document.getElementById('statusBadge').textContent = '🟡 Parado (pronto para rastrear)';
+                    document.getElementById('statusGPS').textContent = '✅ Conectado';
                     atualizarIndicadorPrecisao(accuracy);
                     
-                    mostrarAlerta('✅ Localização obtida!', 'success');
-                    setTimeout(() => limparAlerta('success'), 2000);
+                    mostrarAlerta('Localização obtida com sucesso!', 'success');
+                    setTimeout(() => limparAlerta('success'), 3000);
                 },
                 function(error) {
-                    mostrarAlerta('❌ Erro ao obter localização', 'danger');
+                    const mensagens = {
+                        1: 'Permissão negada. Ative a localização.',
+                        2: 'Localização indisponível.',
+                        3: 'Solicitação de localização expirou.'
+                    };
+                    mostrarAlerta(mensagens[error.code] || 'Erro ao obter localização', 'danger');
+                    document.getElementById('statusGPS').textContent = '❌ Desconectado';
                 },
                 {
                     enableHighAccuracy: true,
@@ -747,12 +798,15 @@
 
         function configurarBuscaEnderecos() {
             const input = document.getElementById('inputEndereço');
+            
             input.addEventListener('input', function(e) {
                 const valor = e.target.value;
+                
                 if (valor.length < 3) {
                     document.getElementById('searchResults').classList.remove('show');
                     return;
                 }
+
                 buscarEnderecos(valor);
             });
         }
@@ -779,6 +833,7 @@
                             const btnRota = document.createElement('button');
                             btnRota.className = 'btn-rota';
                             btnRota.textContent = '→ Rota';
+                            btnRota.type = 'button';
                             btnRota.onclick = (e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -789,16 +844,17 @@
                             div.appendChild(btnRota);
                             resultsDiv.appendChild(div);
                         });
+                        
                         resultsDiv.classList.add('show');
                     }
                 })
-                .catch(err => console.error('Erro:', err));
+                .catch(err => console.error('Erro na busca:', err));
         }
 
         function definirRota(result) {
             const lat = parseFloat(result.lat);
             const lng = parseFloat(result.lon);
-            destinoSelecionado = { lat, lng };
+            destinoSelecionado = { lat: lat, lng: lng };
             
             document.getElementById('inputEndereço').value = result.display_name;
             document.getElementById('searchResults').classList.remove('show');
@@ -811,7 +867,7 @@
             );
             map.fitBounds(bounds, { padding: [100, 100] });
 
-            mostrarAlerta(`✅ Rota para: ${result.display_name}`, 'success');
+            mostrarAlerta(`Rota para: ${result.display_name}`, 'success');
         }
 
         function setarPorCoordenadas() {
@@ -823,7 +879,12 @@
                 return;
             }
 
-            destinoSelecionado = { lat, lng };
+            if (!ultimaPosicao) {
+                mostrarAlerta('Obtenha sua localização primeiro', 'danger');
+                return;
+            }
+
+            destinoSelecionado = { lat: lat, lng: lng };
             destinoMarker.setLatLng([lat, lng]);
 
             const bounds = L.latLngBounds(
@@ -832,7 +893,7 @@
             );
             map.fitBounds(bounds, { padding: [100, 100] });
 
-            mostrarAlerta(`✅ Destino definido`, 'success');
+            mostrarAlerta(`Rota para: ${lat.toFixed(4)}, ${lng.toFixed(4)}`, 'success');
         }
 
         function limparDestino() {
@@ -840,9 +901,12 @@
             destinoMarker.setLatLng([-999, -999]);
             rotaPolyline.setLatLngs([]);
             document.getElementById('inputEndereço').value = '';
+            document.getElementById('inputLatitude').value = '';
+            document.getElementById('inputLongitude').value = '';
             mostrarAlerta('Destino removido', 'info');
         }
 
+        // ============= RASTREAMENTO COM ALTA PRECISÃO =============
         function iniciarRastreamento() {
             if (!navigator.geolocation) {
                 mostrarAlerta('Geolocalização não suportada', 'danger');
@@ -861,7 +925,7 @@
             document.getElementById('statusBadge').className = 'status-badge status-ativo';
             document.getElementById('statusBadge').textContent = '🟢 Rastreando';
             
-            mostrarAlerta('🟢 Rastreamento INICIADO!', 'success');
+            mostrarAlerta('🟢 Rastreamento INICIADO! Capturando pontos...', 'success');
 
             watchId = navigator.geolocation.watchPosition(
                 atualizarPosicao,
@@ -903,12 +967,13 @@
             document.getElementById('latitude').textContent = latitude.toFixed(6);
             document.getElementById('longitude').textContent = longitude.toFixed(6);
             document.getElementById('distancia').textContent = (distanciaTotal / 1000).toFixed(3) + ' km';
-            document.getElementById('pontos').textContent = pontosTrajeto.length;
+            document.getElementById('pontos').textContent = pontosTrajeto.length + ' (cap: ' + pontos_capturados + ')';
             document.getElementById('tempo').textContent = formatarTempo(Date.now() - tempoInicio);
+            document.getElementById('statusGPS').textContent = '✅ Conectado';
 
             if (ultimaVelocidade > 0) {
                 document.getElementById('speedIndicator').classList.remove('hidden');
-                document.getElementById('speedIndicator').textContent = `🚗 ${ultimaVelocidade.toFixed(1)} km/h`;
+                document.getElementById('speedIndicator').textContent = `🚗 Velocidade: ${ultimaVelocidade.toFixed(1)} km/h`;
             }
 
             atualizarIndicadorPrecisao(accuracy);
@@ -940,12 +1005,14 @@
             document.getElementById('btnParar').disabled = true;
             document.getElementById('statusBadge').className = 'status-badge status-parado';
             document.getElementById('statusBadge').textContent = '🟡 Parado';
+            document.getElementById('statusGPS').textContent = '⏸ Pausado';
             
+            // Salvar no histórico
             if (pontosTrajeto.length > 0) {
                 salvarNoHistorico();
             }
             
-            mostrarAlerta(`✅ ${pontosTrajeto.length} pontos registrados`, 'info');
+            mostrarAlerta(`✅ Rastreamento parado! ${pontosTrajeto.length} pontos registrados.`, 'info');
         }
 
         function atualizarIndicadorPrecisao(accuracy) {
@@ -963,22 +1030,25 @@
         }
 
         function limparTrajeto() {
-            if (confirm('Limpar trajeto?')) {
+            if (confirm('Limpar todo o trajeto?')) {
                 pontosTrajeto = [];
                 distanciaTotal = 0;
                 ultimaPosicao = null;
+                pontos_capturados = 0;
                 trajetoPolyline.setLatLngs([]);
 
                 document.getElementById('distancia').textContent = '0 km';
                 document.getElementById('pontos').textContent = '0';
                 document.getElementById('tempo').textContent = '00:00';
+                document.getElementById('speedIndicator').classList.add('hidden');
+                
                 mostrarAlerta('Trajeto limpo', 'info');
             }
         }
 
         function exportarDados() {
             if (pontosTrajeto.length === 0) {
-                mostrarAlerta('Nenhum trajeto!', 'danger');
+                mostrarAlerta('Nenhum trajeto para exportar!', 'danger');
                 return;
             }
 
@@ -997,9 +1067,10 @@
             link.click();
             document.body.removeChild(link);
             
-            mostrarAlerta(`✅ ${pontosTrajeto.length} pontos exportados`, 'success');
+            mostrarAlerta(`✅ Trajeto exportado! ${pontosTrajeto.length} pontos.`, 'success');
         }
 
+        // ============= HISTÓRICO =============
         function salvarNoHistorico() {
             const rota = {
                 id: Date.now(),
@@ -1038,11 +1109,11 @@
             count.textContent = historico.length;
 
             if (historico.length === 0) {
-                lista.innerHTML = '<div class="historico-vazio">Nenhuma rota</div>';
+                lista.innerHTML = '<div class="historico-vazio">Nenhuma rota registrada</div>';
                 return;
             }
 
-            lista.innerHTML = historico.map((rota) => `
+            lista.innerHTML = historico.map((rota, index) => `
                 <div class="historico-item">
                     <div class="historico-item-info">
                         <div class="historico-item-data">📅 ${rota.data}</div>
@@ -1051,7 +1122,7 @@
                     </div>
                     <div class="historico-item-buttons">
                         <button class="btn-view" onclick="visualizarRota(${rota.id})">👁️ Ver</button>
-                        <button class="btn-delete" onclick="excluirRota(${rota.id})">🗑️ Del</button>
+                        <button class="btn-delete" onclick="excluirRota(${rota.id})">🗑️ Excluir</button>
                     </div>
                 </div>
             `).join('');
@@ -1063,29 +1134,33 @@
 
             const latlngs = rota.pontos.map(p => [p.lat, p.lng]);
             
+            // Desenhar a rota no mapa
             const polyline = L.polyline(latlngs, {
                 color: '#ffa500',
                 weight: 4,
                 opacity: 0.7,
-                lineCap: 'round'
+                lineCap: 'round',
+                lineJoin: 'round'
             }).addTo(map);
 
+            // Centralizar no mapa
             const bounds = L.latLngBounds(latlngs);
             map.fitBounds(bounds, { padding: [100, 100] });
 
-            mostrarAlerta(`👁️ ${rota.distancia} km em ${rota.tempo}`, 'success');
+            mostrarAlerta(`Visualizando: ${rota.distancia} km em ${rota.tempo}`, 'success');
 
+            // Remover após 10 segundos
             setTimeout(() => {
                 map.removeLayer(polyline);
             }, 10000);
         }
 
         function excluirRota(id) {
-            if (confirm('Excluir esta rota?')) {
+            if (confirm('Tem certeza que deseja excluir esta rota?')) {
                 historico = historico.filter(r => r.id !== id);
                 localStorage.setItem('rastreador_historico', JSON.stringify(historico));
                 atualizarVisualizacaoHistorico();
-                mostrarAlerta('✅ Rota excluída', 'success');
+                mostrarAlerta('✅ Rota excluída com sucesso', 'success');
             }
         }
 
@@ -1129,6 +1204,7 @@
             }
         });
 
+        // Inicializar
         window.addEventListener('load', () => {
             inicializarMapa();
         });
